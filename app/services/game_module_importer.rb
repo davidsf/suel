@@ -86,13 +86,15 @@ class GameModuleImporter
       maps_by_identifier[identifier] = game_map
 
       map_info.boards.each_with_index do |board_info, board_index|
+        dimensions = board_dimensions(board_info.image)
+        dimensions = { width: board_info.width, height: board_info.height } if dimensions.empty?
         game_map.boards.create!(
           name: board_info.name,
           image_filename: board_info.image,
           reversible: board_info.reversible,
           grid: board_info.grid,
           position: board_index,
-          **board_dimensions(board_info.image)
+          **dimensions.compact
         )
       end
 

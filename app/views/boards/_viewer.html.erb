@@ -26,6 +26,9 @@
               width: board.width, height: board.height,
               decoding: "async",
               data: { board_target: "image" } %>
+      <% elsif board.width.present? %>
+        <%# Imageless board (player hand): plain surface %>
+        <div class="board" style="width: <%= board.width %>px; height: <%= board.height %>px; background: #f0ead8;"></div>
       <% end %>
       <%= grid_overlay(board) %>
       <%= yield %>

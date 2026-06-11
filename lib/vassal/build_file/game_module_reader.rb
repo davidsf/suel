@@ -27,7 +27,7 @@ module Vassal
 
       Result = Struct.new(:maps, :prototypes, :piece_slots, :sides, :other_components, keyword_init: true)
       MapInfo = Struct.new(:class_name, :name, :kind, :side, :settings, :boards, :decks, :setup_stacks, keyword_init: true)
-      BoardInfo = Struct.new(:name, :image, :reversible, :grid, keyword_init: true)
+      BoardInfo = Struct.new(:name, :image, :reversible, :grid, :width, :height, keyword_init: true)
       DeckInfo = Struct.new(:name, :owning_board, :x, :y, :width, :height, :settings, :card_slots, keyword_init: true)
       SetupStackInfo = Struct.new(:name, :owning_board, :x, :y, :location, :use_grid_location, :slots, keyword_init: true)
       SlotInfo = Struct.new(:name, :gpid, :width, :height, :text, :path, :kind, keyword_init: true)
@@ -90,7 +90,10 @@ module Vassal
           name: node["name"],
           image: node["image"].presence,
           reversible: node["reversible"] == "true",
-          grid: node.children.filter_map { |child| read_grid(child) }.first
+          grid: node.children.filter_map { |child| read_grid(child) }.first,
+          # Imageless boards (player hands) size themselves via attributes
+          width: node["width"]&.to_i,
+          height: node["height"]&.to_i
         )
       end
 
