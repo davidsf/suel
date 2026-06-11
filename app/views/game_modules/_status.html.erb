@@ -1,0 +1,12 @@
+<p>
+  <span class="status-pill <%= game_module.status %>"><%= game_module.status %></span>
+  <% if game_module.progress_note.present? && !game_module.ready? %>
+    <%= game_module.progress_note %>
+  <% end %>
+  <% if game_module.failed? && game_module.error_message.present? %>
+    <br><small><%= game_module.error_message %></small>
+  <% end %>
+  <% if game_module.version.present? %>
+    <small>· versión <%= game_module.version %> · VASSAL <%= game_module.vassal_version %></small>
+  <% end %>
+</p>

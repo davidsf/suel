@@ -1,0 +1,23 @@
+<%# Browser-composited piece: basic image + active layer images + labels.
+    Locals: traits (parsed json), game_module. %>
+<% basic = traits.find { |t| t["kind"] == "basic" } || {} %>
+<% rotation = piece_rotation(traits) %>
+<span class="piece-images" <% if rotation %>style="transform: rotate(<%= rotation %>deg); display:inline-block"<% end %>>
+  <% if basic["image"].present? %>
+    <%= image_tag module_image_path(game_module, basic["image"]),
+          alt: basic["name"], loading: "lazy", decoding: "async",
+          data: { piece_target: "front" } %>
+  <% end %>
+  <% traits.each do |trait| %>
+    <% next unless trait["kind"] == "layer" %>
+    <% image = layer_image(trait) %>
+    <% next if image.blank? %>
+    <%= image_tag module_image_path(game_module, image),
+          class: basic["image"].present? ? "overlay-layer" : nil,
+          style: (basic["image"].present? ? "transform: translate(calc(-50% + #{trait['x_off'].to_i}px), calc(-50% + #{trait['y_off'].to_i}px))" : nil),
+          alt: "", loading: "lazy", decoding: "async" %>
+  <% end %>
+  <% piece_labels(traits).each do |label| %>
+    <span class="piece-label"><%= label["text"] %></span>
+  <% end %>
+</span>

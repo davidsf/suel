@@ -1,0 +1,12 @@
+<% content_for :main_class, "full" %>
+<% content_for :title, "#{@board.name} — #{@game_module.name}" %>
+
+<% toolbar = capture do %>
+  <%= link_to "← #{@game_module.name}", game_module_path(@game_module) %>
+  <strong><%= @board.name.presence || @game_map.name %></strong>
+  <span class="muted"><%= @game_map.name %><%= " · mano de #{@game_map.side}" if @game_map.kind_player_hand? %></span>
+<% end %>
+
+<%= render layout: "boards/viewer",
+      locals: { board: @board, game_module: @game_module, toolbar: } do %>
+<% end %>

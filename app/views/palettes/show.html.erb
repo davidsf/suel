@@ -1,0 +1,49 @@
+<% content_for :title, "Paleta — #{@game_module.name}" %>
+
+<p><%= link_to "← #{@game_module.name}", game_module_path(@game_module) %></p>
+<h1>Paleta de fichas</h1>
+
+<% if @groups.empty? && @decks.empty? %>
+  <p class="muted">Este módulo no define paleta de fichas (las fichas pueden venir colocadas en sus escenarios).</p>
+<% end %>
+
+<% @groups.each do |path, pieces| %>
+  <details class="palette-group" open>
+    <summary><strong><%= path.any? ? path.join(" › ") : "Fichas" %></strong> <span class="muted">(<%= pieces.size %>)</span></summary>
+    <div class="palette-pieces">
+      <% pieces.each do |piece| %>
+        <figure data-controller="piece">
+          <span class="piece-box">
+            <%= render "pieces/piece", traits: piece.traits, game_module: @game_module %>
+          </span>
+          <% if (back = piece_back_image(piece.traits)) %>
+            <br><button data-action="piece#flip"
+                        data-piece-back-param="<%= module_image_path(@game_module, back) %>">girar</button>
+          <% end %>
+          <figcaption><%= piece.name %></figcaption>
+        </figure>
+      <% end %>
+    </div>
+  </details>
+<% end %>
+
+<% @decks.each do |deck| %>
+  <details class="palette-group">
+    <summary><strong>Mazo: <%= deck.name %></strong>
+      <span class="muted">(<%= deck.piece_definitions.size %> cartas · <%= deck.game_map.name %>)</span></summary>
+    <div class="palette-pieces">
+      <% deck.piece_definitions.each do |card| %>
+        <figure data-controller="piece">
+          <span class="piece-box">
+            <%= render "pieces/piece", traits: card.traits, game_module: @game_module %>
+          </span>
+          <% if (back = piece_back_image(card.traits)) %>
+            <br><button data-action="piece#flip"
+                        data-piece-back-param="<%= module_image_path(@game_module, back) %>">girar</button>
+          <% end %>
+          <figcaption><%= card.name %></figcaption>
+        </figure>
+      <% end %>
+    </div>
+  </details>
+<% end %>

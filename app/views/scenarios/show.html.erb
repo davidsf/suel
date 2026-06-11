@@ -1,0 +1,52 @@
+<% content_for :title, "#{@scenario.name} — #{@game_module.name}" %>
+
+<% if @board.nil? %>
+  <p><%= link_to "← #{@game_module.name}", game_module_path(@game_module) %></p>
+  <h1><%= @scenario.name %></h1>
+  <p class="muted">
+    Este escenario no tiene fichas sobre tableros conocidos
+    (<%= @scenario.scenario_pieces.count %> fichas, <%= @unresolved_count %> sin resolver).
+  </p>
+<% else %>
+  <% content_for :main_class, "full" %>
+
+  <% toolbar = capture do %>
+    <%= link_to "← #{@game_module.name}", game_module_path(@game_module) %>
+    <strong><%= @scenario.name %></strong>
+    <% if @maps.size > 1 %>
+      <span class="muted">
+        <% @maps.each do |map| %>
+          <% if map == @game_map %>
+            <strong><%= map.name %></strong>
+          <% else %>
+            <%= link_to map.name, game_module_scenario_path(@game_module, @scenario, map: map.id) %>
+          <% end %>
+        <% end %>
+      </span>
+    <% end %>
+    <span class="muted"><%= @pieces.size %> fichas</span>
+    <% if @unresolved_count.positive? %>
+      <span class="muted">· <%= @unresolved_count %> sin ubicar</span>
+    <% end %>
+  <% end %>
+
+  <%= render layout: "boards/viewer",
+        locals: { board: @board, game_module: @game_module, toolbar: } do %>
+    <% stack_offsets = Hash.new(0) %>
+    <% @pieces.each do |piece| %>
+      <% offset = stack_offsets["#{piece.x},#{piece.y}"] %>
+      <% stack_offsets["#{piece.x},#{piece.y}"] += 1 %>
+      <div class="piece" id="piece_<%= piece.id %>"
+           style="left: <%= piece.x.to_i + offset * 6 %>px; top: <%= piece.y.to_i - offset * 6 %>px; z-index: <%= piece.z_order + 1 %>;"
+           title="<%= piece.name %>">
+        <%= render "pieces/piece", traits: piece.traits, game_module: @game_module %>
+      </div>
+    <% end %>
+    <% @decks.each do |deck| %>
+      <div class="deck-marker"
+           style="left: <%= deck.x %>px; top: <%= deck.y %>px; width: <%= [ deck.width, 60 ].max %>px; height: <%= [ deck.height, 60 ].max %>px; z-index: 5000;">
+        <span><%= deck.name %> (<%= deck.piece_definitions.size %>)</span>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

@@ -1,0 +1,17 @@
+<h1>Subir módulo VASSAL</h1>
+
+<%= form_with model: @game_module, url: admin_game_modules_path do |form| %>
+  <% if @game_module.errors.any? %>
+    <ul>
+      <% @game_module.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <p>
+    <%= form.label :package, "Fichero .vmod" %>
+    <%= form.file_field :package, accept: ".vmod,application/zip", required: true %>
+  </p>
+  <p><%= form.submit "Subir e importar" %></p>
+<% end %>

@@ -1,0 +1,79 @@
+<%= turbo_stream_from @game_module %>
+
+<h1><%= @game_module.name || @game_module.slug %></h1>
+
+<%= render "status", game_module: @game_module %>
+
+<% if @game_module.description.present? %>
+  <p class="muted"><%= @game_module.description %></p>
+<% end %>
+
+<% if @game_module.ready? %>
+  <h2>Mapas y tableros</h2>
+  <table class="listing">
+    <% @game_module.game_maps.each do |game_map| %>
+      <% game_map.boards.each do |board| %>
+        <tr>
+          <td><%= link_to board.name.presence || game_map.name, game_module_board_path(@game_module, board) %></td>
+          <td class="muted"><%= game_map.name %><%= " · mano de #{game_map.side}" if game_map.kind_player_hand? %></td>
+          <td class="muted"><%= board.width && "#{board.width}×#{board.height}px" %></td>
+          <td class="muted">rejilla: <%= board.grid_type %></td>
+        </tr>
+      <% end %>
+      <% if game_map.boards.empty? && game_map.decks.any? %>
+        <tr>
+          <td><%= game_map.name %></td>
+          <td class="muted" colspan="3"><%= game_map.decks.size %> mazos, sin tablero</td>
+        </tr>
+      <% end %>
+    <% end %>
+  </table>
+
+  <h2>Fichas</h2>
+  <p>
+    <%= link_to "Paleta de fichas", game_module_palette_path(@game_module) %>
+    <span class="muted">(<%= @game_module.piece_definitions.where(deck_id: nil).count %> fichas<% if @game_module.decks.any? %>, <%= @game_module.piece_definitions.where.not(deck_id: nil).count %> cartas en <%= @game_module.decks.count %> mazos<% end %>)</span>
+  </p>
+
+  <h2>Escenarios</h2>
+  <% if @scenarios.any? %>
+    <table class="listing">
+      <% @scenarios.each do |scenario| %>
+        <tr>
+          <td>
+            <% if scenario.ready? %>
+              <%= link_to scenario.name, game_module_scenario_path(@game_module, scenario) %>
+            <% else %>
+              <%= scenario.name %>
+            <% end %>
+          </td>
+          <td class="muted"><%= scenario.module_setup? ? "definido en el módulo" : scenario.source_filename %></td>
+          <td class="muted"><%= scenario.scenario_pieces.count %> fichas</td>
+          <td><span class="status-pill <%= scenario.status %>"><%= scenario.status %></span></td>
+        </tr>
+      <% end %>
+    </table>
+  <% else %>
+    <p class="muted">El módulo no incluye escenarios.</p>
+  <% end %>
+
+  <% if @game_module.parse_warnings.any? %>
+    <details class="box">
+      <summary>Componentes no soportados y avisos (<%= @game_module.parse_warnings.size %>)</summary>
+      <ul class="warning-list">
+        <% @game_module.parse_warnings.each do |warning| %>
+          <li><%= warning %></li>
+        <% end %>
+      </ul>
+    </details>
+  <% end %>
+<% end %>
+
+<% if Current.user&.admin? %>
+  <p>
+    <%= button_to "Reimportar", reimport_admin_game_module_path(@game_module), method: :post, form: { style: "display:inline" } %>
+    <%= button_to "Eliminar", admin_game_module_path(@game_module), method: :delete,
+          form: { style: "display:inline" },
+          data: { turbo_confirm: "¿Eliminar el módulo y todos sus datos?" } %>
+  </p>
+<% end %>

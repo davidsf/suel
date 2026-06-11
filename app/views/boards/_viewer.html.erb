@@ -1,0 +1,34 @@
+<%# Shared pan/zoom viewer: toolbar + world. Pass board + game_module and a
+    captured `toolbar` string; pieces overlay via block. %>
+<div data-controller="pan-zoom board"
+     data-pan-zoom-width-value="<%= board.width || 0 %>"
+     data-pan-zoom-height-value="<%= board.height || 0 %>"
+     data-board-full-src-value="<%= board.image_filename.present? ? module_image_path(game_module, board.image_filename) : "" %>">
+  <div class="viewer-bar">
+    <%= toolbar %>
+    <span class="spacer"></span>
+    <% if board.grid.present? %>
+      <span class="muted">rejilla: <%= board.grid_type %></span>
+      <button data-action="board#toggleGrid">Rejilla</button>
+    <% end %>
+    <button data-action="pan-zoom#zoomOut">−</button>
+    <button data-action="pan-zoom#zoomIn">+</button>
+    <button data-action="pan-zoom#fit">Ajustar</button>
+  </div>
+  <div class="viewer" data-pan-zoom-target="viewport"
+       data-action="wheel->pan-zoom#wheel pointerdown->pan-zoom#pointerDown
+                    pointermove->pan-zoom#pointerMove pointerup->pan-zoom#pointerUp
+                    pointercancel->pan-zoom#pointerUp">
+    <div class="world" data-pan-zoom-target="world">
+      <% if board.image_filename.present? %>
+        <%= image_tag board_preview_path(board, game_module),
+              class: "board", alt: board.name,
+              width: board.width, height: board.height,
+              decoding: "async",
+              data: { board_target: "image" } %>
+      <% end %>
+      <%= grid_overlay(board) %>
+      <%= yield %>
+    </div>
+  </div>
+</div>
