@@ -24,6 +24,20 @@ class ViewersTest < ActionDispatch::IntegrationTest
     assert_match @game_module.name, response.body
   end
 
+  test "a signed-in admin sees the upload link on public pages" do
+    sign_in_as users(:admin)
+    get root_path
+    assert_match "Subir módulo", response.body
+
+    get game_module_path(@game_module)
+    assert_match "Reimportar", response.body
+  end
+
+  test "anonymous visitors see no admin actions" do
+    get root_path
+    assert_no_match "Subir módulo", response.body
+  end
+
   test "board viewer renders with grid overlay" do
     board = @game_module.boards.first
     get game_module_board_path(@game_module, board)
