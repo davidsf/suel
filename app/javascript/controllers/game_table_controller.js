@@ -208,6 +208,13 @@ export default class extends Controller {
     if (piece) this.patch(piece.dataset.cycleLayerUrl, { index, delta })
   }
 
+  roll(event) {
+    fetch(event.params.url, {
+      method: "POST",
+      headers: { "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content }
+    })
+  }
+
   // --- server sync ---------------------------------------------------------
 
   async patch(url, params) {

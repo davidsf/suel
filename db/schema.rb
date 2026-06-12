@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -65,6 +65,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_100000) do
     t.integer "x"
     t.integer "y"
     t.index ["game_map_id"], name: "index_decks_on_game_map_id"
+  end
+
+  create_table "game_events", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.integer "game_id", null: false
+    t.string "kind", default: "roll", null: false
+    t.json "payload", default: {}
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["game_id", "created_at"], name: "index_game_events_on_game_id_and_created_at"
+    t.index ["game_id"], name: "index_game_events_on_game_id"
+    t.index ["user_id"], name: "index_game_events_on_user_id"
   end
 
   create_table "game_maps", force: :cascade do |t|
@@ -225,6 +238,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_100000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "boards", "game_maps"
   add_foreign_key "decks", "game_maps"
+  add_foreign_key "game_events", "games"
+  add_foreign_key "game_events", "users"
   add_foreign_key "game_maps", "game_modules"
   add_foreign_key "game_pieces", "boards"
   add_foreign_key "game_pieces", "game_maps"

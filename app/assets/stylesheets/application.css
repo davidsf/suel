@@ -130,6 +130,29 @@ svg.grid-overlay g[hidden] { display: none; }
 .piece-toolbar button { font: inherit; padding: 0.15rem 0.6rem; }
 .piece-toolbar .layer-group { display: inline-flex; gap: 0.15rem; }
 
+/* ---- dice + game log ---- */
+.dice-bar {
+  position: fixed; bottom: 1rem; right: 1rem; z-index: 1000;
+  display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; max-width: 40vw;
+}
+.dice-bar button {
+  font: inherit; padding: 0.2rem 0.7rem;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); cursor: pointer;
+}
+.game-log {
+  position: fixed; left: 1rem; bottom: 1rem; z-index: 1000;
+  width: 290px; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  font-size: 0.82rem;
+}
+.game-log summary { cursor: pointer; padding: 0.3rem 0.7rem; color: var(--muted); }
+.game-log .log-entries {
+  display: flex; flex-direction: column-reverse;
+  max-height: 30vh; overflow-y: auto; padding: 0.2rem 0.7rem 0.5rem;
+}
+.game-log .log-entry { padding: 0.1rem 0; border-top: 1px solid #f0ece2; }
+
 /* snap ghost while dragging */
 .snap-ghost {
   position: absolute; transform: translate(-50%, -50%);

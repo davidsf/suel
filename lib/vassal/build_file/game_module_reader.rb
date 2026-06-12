@@ -23,6 +23,7 @@ module Vassal
         VASSAL.build.module.properties.GlobalTranslatableMessages
         VASSAL.build.module.gamepieceimage.GamePieceImageDefinitions
         VASSAL.build.module.font.FontOrganizer
+        VASSAL.build.module.DiceButton
       ].freeze
 
       Result = Struct.new(:maps, :prototypes, :piece_slots, :sides, :other_components, keyword_init: true)

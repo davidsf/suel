@@ -48,6 +48,27 @@
       <% end %>
     <% end %>
 
+    <% if @player && @dice_buttons.any? %>
+      <div class="dice-bar">
+        <% @dice_buttons.each_with_index do |button, index| %>
+          <button data-action="game-table#roll"
+                  data-game-table-url-param="<%= game_rolls_path(@game, button: index) %>"
+                  title="<%= button['n_dice'] %>d<%= button['n_sides'] %><%= "+#{button['plus']}" if button['plus'].positive? %>">
+            🎲 <%= button["label"] %>
+          </button>
+        <% end %>
+      </div>
+    <% end %>
+
+    <details class="game-log" open>
+      <summary>Registro</summary>
+      <div id="game_log" class="log-entries">
+        <% @events.each do |event| %>
+          <%= render "game_events/game_event", game_event: event %>
+        <% end %>
+      </div>
+    </details>
+
     <div class="piece-toolbar" data-game-table-target="toolbar" hidden>
       <span data-game-table-target="pieceName" class="muted"></span>
       <button data-game-table-target="flipButton" data-action="game-table#flip">Voltear</button>

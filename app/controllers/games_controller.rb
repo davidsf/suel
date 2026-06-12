@@ -60,5 +60,7 @@ class GamesController < ApplicationController
     @layout = @game_map ? @game.board_layout(@game_map).entries : []
 
     @pieces = @game_map ? placed.where(game_map_id: @game_map.id).order(:z_order) : GamePiece.none
+    @dice_buttons = @game_module.dice_buttons
+    @events = @game.game_events.order(:created_at).last(100)
   end
 end

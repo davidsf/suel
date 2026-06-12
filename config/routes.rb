@@ -17,6 +17,7 @@ Rails.application.routes.draw do
       get :snap
     end
     resources :players, only: :create
+    resources :rolls, only: :create
     resources :pieces, only: [], controller: "game_pieces" do
       member do
         patch :move

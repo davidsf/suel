@@ -6,6 +6,7 @@ class Game < ApplicationRecord
   belongs_to :creator, class_name: "User"
   has_many :players, dependent: :destroy
   has_many :game_pieces, dependent: :destroy
+  has_many :game_events, dependent: :destroy
 
   enum :status, %w[open finished].index_by(&:itself), default: "open"
 
