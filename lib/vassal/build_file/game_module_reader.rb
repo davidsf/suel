@@ -39,32 +39,42 @@ module Vassal
       end
 
       def read
-        maps = []
-        prototypes = {}
-        piece_slots = []
-        sides = []
-        other = Hash.new(0)
+        @maps = []
+        @prototypes = {}
+        @piece_slots = []
+        @sides = []
+        @other = Hash.new(0)
 
-        @root.children.each do |node|
-          if (kind = map_kind(node))
-            maps << read_map(node, kind)
-          elsif node.class_name == "VASSAL.build.module.PrototypesContainer"
-            node.children_tagged("PrototypeDefinition").each do |proto|
-              prototypes[proto["name"]] = proto.text
-            end
-          elsif node.class_name == "VASSAL.build.module.PieceWindow"
-            collect_slots(node, [], piece_slots)
-          elsif node.class_name == "VASSAL.build.module.PlayerRoster"
-            sides = node.children_tagged("entry").map(&:text)
-          elsif !IGNORED_CLASSES.include?(node.class_name)
-            other[node.class_name] += 1
-          end
-        end
+        walk(@root.children)
 
-        Result.new(maps:, prototypes:, piece_slots:, sides:, other_components: other)
+        Result.new(maps: @maps, prototypes: @prototypes, piece_slots: @piece_slots,
+                   sides: @sides, other_components: @other)
       end
 
       private
+
+      # Folders (VASSAL 3.6+: VASSAL.build.module.folder.*) only organize the
+      # editor tree; their children behave as if they were at the top level.
+      def walk(nodes)
+        nodes.each do |node|
+          if node.class_name.include?(".folder.")
+            walk(node.children)
+          elsif (kind = map_kind(node))
+            @maps << read_map(node, kind)
+          elsif node.class_name == "VASSAL.build.module.PrototypesContainer"
+            node.descendants_tagged("PrototypeDefinition").each do |proto|
+              @prototypes[proto["name"]] = proto.text
+            end
+          elsif node.class_name == "VASSAL.build.module.PieceWindow"
+            collect_slots(node, [], @piece_slots)
+          elsif node.class_name == "VASSAL.build.module.PlayerRoster"
+            @sides = node.children_tagged("entry").map(&:text)
+          elsif !IGNORED_CLASSES.include?(node.class_name)
+            @other[node.class_name] += 1
+          end
+        end
+      end
+
 
       def map_kind(node)
         MAP_CLASSES[node.class_name] ||
@@ -81,7 +91,7 @@ module Vassal
           settings: node.attributes,
           boards: node.children_tagged("BoardPicker").flat_map { |bp| bp.children_tagged("Board").map { |b| read_board(b) } },
           decks: node.descendants_tagged("DrawPile").map { |d| read_deck(d) },
-          setup_stacks: node.children.select { |c| c.tag == "SetupStack" }.map { |s| read_setup_stack(s) }
+          setup_stacks: node.descendants_tagged("SetupStack").map { |s| read_setup_stack(s) }
         )
       end
 
