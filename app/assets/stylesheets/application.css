@@ -83,6 +83,8 @@ ul.warning-list { font-size: 0.85rem; color: var(--muted); }
 .viewer .board-tile { position: absolute; }
 .viewer .board-tile img.board, .viewer .board-tile div.board { display: block; user-select: none; -webkit-user-drag: none; }
 .viewer svg.grid-overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
+/* The hidden attribute has no effect on SVG elements; mirror it via CSS */
+svg.grid-overlay g[hidden] { display: none; }
 
 .viewer-bar {
   display: flex; gap: 0.8rem; align-items: center;

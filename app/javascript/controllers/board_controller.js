@@ -15,11 +15,13 @@ export default class extends Controller {
     })
   }
 
+  // SVG elements ignore the hidden property; toggle the attribute (mirrored
+  // to display:none via CSS).
   toggleGrid() {
-    this.gridLinesTargets.forEach(g => g.hidden = !g.hidden)
+    this.gridLinesTargets.forEach(g => g.toggleAttribute("hidden"))
   }
 
   toggleNumbering() {
-    this.numberingTargets.forEach(g => g.hidden = !g.hidden)
+    this.numberingTargets.forEach(g => g.toggleAttribute("hidden"))
   }
 }
