@@ -118,8 +118,9 @@ svg.grid-overlay g[hidden] { display: none; }
 .palette-pieces figcaption { font-size: 0.72rem; max-width: 9rem; color: var(--muted); overflow-wrap: break-word; }
 
 /* ---- game table ---- */
-.table-piece { cursor: pointer; touch-action: none; }
+.table-piece { cursor: pointer; touch-action: none; transition: translate 0.12s ease-out; }
 .table-piece.selected { outline: 3px solid #ffd84d; outline-offset: 2px; border-radius: 3px; }
+.table-piece.stacked { filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.45)); }
 .piece-toolbar {
   position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
   background: var(--panel); border: 1px solid var(--border); border-radius: 8px;

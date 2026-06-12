@@ -11,19 +11,93 @@ export default class extends Controller {
 
   connect() {
     this.selectedId = null
-    this.reapplySelection = this.reapplySelection.bind(this)
+    this.expandedStack = null
     this.beforeStreamRender = (event) => {
       const original = event.detail.render
       event.detail.render = async (el) => {
         await original(el)
         this.reapplySelection()
+        this.layoutStacks()
       }
     }
     document.addEventListener("turbo:before-stream-render", this.beforeStreamRender)
+
+    // Plain click on the background (not a piece, not a pan) collapses the
+    // expanded stack and clears the selection.
+    this.viewport = this.element.querySelector(".viewer")
+    if (this.viewport) {
+      this.onViewportDown = (e) => { this.viewportDownAt = { x: e.clientX, y: e.clientY } }
+      this.onViewportUp = (e) => {
+        const start = this.viewportDownAt
+        this.viewportDownAt = null
+        if (!start || Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y) >= 4) return
+
+        // Spectators' piece events bubble here: let them expand stacks too
+        const piece = e.target.closest(".table-piece")
+        if (piece && !this.playableValue) {
+          this.toggleStack(piece)
+          return
+        }
+        if (piece) return // players handle their clicks in pieceDown
+
+        this.collapseStacks()
+        this.clearSelection()
+        this.selectedId = null
+        if (this.hasToolbarTarget) this.toolbarTarget.hidden = true
+      }
+      this.viewport.addEventListener("pointerdown", this.onViewportDown)
+      this.viewport.addEventListener("pointerup", this.onViewportUp)
+    }
+
+    this.layoutStacks()
   }
 
   disconnect() {
     document.removeEventListener("turbo:before-stream-render", this.beforeStreamRender)
+    if (this.viewport) {
+      this.viewport.removeEventListener("pointerdown", this.onViewportDown)
+      this.viewport.removeEventListener("pointerup", this.onViewportUp)
+    }
+  }
+
+  // --- stacks ---------------------------------------------------------------
+
+  stackKey(piece) {
+    return `${Math.round(parseFloat(piece.style.left))},${Math.round(parseFloat(piece.style.top))}`
+  }
+
+  stacks() {
+    const groups = new Map()
+    this.element.querySelectorAll(".table-piece").forEach(piece => {
+      const key = this.stackKey(piece)
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key).push(piece)
+    })
+    groups.forEach(group => group.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0)))
+    return groups
+  }
+
+  // Collapsed stacks cascade a few pixels (VASSAL style); the expanded one
+  // fans out so each piece can be picked.
+  layoutStacks() {
+    this.stacks().forEach((group, key) => {
+      const expanded = key === this.expandedStack
+      group.forEach((piece, index) => {
+        if (group.length === 1) {
+          piece.style.translate = ""
+        } else if (expanded) {
+          piece.style.translate = `${index * 30}px 0`
+        } else {
+          piece.style.translate = `${index * 5}px ${-index * 5}px`
+        }
+        piece.classList.toggle("stacked", group.length > 1 && !expanded)
+      })
+    })
+  }
+
+  collapseStacks() {
+    this.expandedStack = null
+    this.layoutStacks()
   }
 
   // --- drag / select -------------------------------------------------------
@@ -55,6 +129,7 @@ export default class extends Controller {
       piece.style.top = `${drag.startTop + dy}px`
       if (drag.moved) {
         piece.style.zIndex = 100000
+        piece.style.translate = "" // leave any stack fan; drag uses real coords
         this.previewSnap(piece)
       }
     }
@@ -70,7 +145,7 @@ export default class extends Controller {
           y: Math.round(parseFloat(piece.style.top))
         })
       } else {
-        this.select(piece)
+        this.pieceClicked(piece)
       }
     }
 
@@ -122,6 +197,27 @@ export default class extends Controller {
   hideGhost() {
     this.snapSeq = (this.snapSeq || 0) + 1 // discard in-flight previews
     if (this.ghost) this.ghost.hidden = true
+  }
+
+  // First click on a collapsed stack expands it; clicking an expanded (or
+  // lone) piece selects it.
+  pieceClicked(piece) {
+    if (this.toggleStack(piece)) return
+    this.select(piece)
+  }
+
+  // Expands the piece's stack if it was collapsed. Returns true when it did.
+  toggleStack(piece) {
+    const key = this.stackKey(piece)
+    const stack = this.stacks().get(key) || []
+    if (stack.length <= 1 || this.expandedStack === key) return false
+
+    this.expandedStack = key
+    this.layoutStacks()
+    this.clearSelection()
+    this.selectedId = null
+    if (this.hasToolbarTarget) this.toolbarTarget.hidden = true
+    return true
   }
 
   select(piece) {

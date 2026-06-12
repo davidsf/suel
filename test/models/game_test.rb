@@ -16,23 +16,16 @@ class GameTest < ActiveSupport::TestCase
     FileUtils.rm_rf(Rails.root.join("tmp", "vassal-test", Process.pid.to_s))
   end
 
-  test "copy_scenario_pieces! copies placed pieces with baked stack offsets" do
+  test "copy_scenario_pieces! copies placed pieces verbatim (stacks share coordinates)" do
     game = Game.create!(game_module: @game_module, scenario: @scenario,
                         creator: users(:one), name: "Prueba")
     game.copy_scenario_pieces!
 
     placed = @scenario.scenario_pieces.where.not(game_map_id: nil)
     assert_equal placed.count, game.game_pieces.count
-
-    # Pieces sharing scenario coordinates must end up spread apart
-    stacked = placed.group(:game_map_id, :x, :y).count.find { |_k, v| v > 1 }
-    if stacked
-      (map_id, x, y) = stacked.first
-      copies = game.game_pieces.where(game_map_id: map_id)
-        .where("x >= ? AND x < ?", x, x + 60).where("y > ? AND y <= ?", y - 60, y)
-      assert_equal copies.count, copies.distinct.pluck(:x, :y).count,
-        "stacked pieces should have distinct baked coordinates"
-    end
+    assert_equal placed.order(:z_order).pluck(:x, :y, :z_order).sort,
+                 game.game_pieces.order(:z_order).pluck(:x, :y, :z_order).sort,
+      "coordinates are copied as-is; the client fans stacks out"
   end
 
   test "sides falls back to generic sides when the module has no roster" do

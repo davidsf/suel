@@ -24,23 +24,20 @@ class Game < ApplicationRecord
     user && players.find_by(user: user)
   end
 
-  # Copies the scenario's placed pieces as this game's mutable pieces, baking
-  # in the same stack-spread offsets the scenario viewer computes at render
-  # time (stored coordinates must be final: broadcasts replace pieces 1:1).
+  # Copies the scenario's placed pieces as this game's mutable pieces.
+  # Coordinates are copied verbatim: pieces sharing a point form a stack and
+  # the table fans them out client-side, VASSAL style.
   def copy_scenario_pieces!
     now = Time.current
-    stack_offsets = Hash.new(0)
     rows = scenario.scenario_pieces.where.not(game_map_id: nil).order(:z_order).map do |piece|
-      offset = stack_offsets["#{piece.game_map_id}/#{piece.x},#{piece.y}"]
-      stack_offsets["#{piece.game_map_id}/#{piece.x},#{piece.y}"] += 1
       {
         game_id: id,
         game_map_id: piece.game_map_id,
         board_id: piece.board_id,
         gpid: piece.gpid,
         name: piece.name,
-        x: piece.x.to_i + offset * 6,
-        y: piece.y.to_i - offset * 6,
+        x: piece.x.to_i,
+        y: piece.y.to_i,
         z_order: piece.z_order,
         type_string: piece.type_string,
         traits: piece.traits,
