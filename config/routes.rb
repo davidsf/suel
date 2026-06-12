@@ -18,6 +18,7 @@ Rails.application.routes.draw do
     end
     resources :players, only: :create
     resources :rolls, only: :create
+    resources :messages, only: :create
     resources :pieces, only: [], controller: "game_pieces" do
       member do
         patch :move

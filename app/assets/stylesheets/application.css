@@ -155,6 +155,9 @@ svg.grid-overlay g[hidden] { display: none; }
   max-height: 30vh; overflow-y: auto; padding: 0.2rem 0.7rem 0.5rem;
 }
 .game-log .log-entry { padding: 0.1rem 0; border-top: 1px solid #f0ece2; }
+.game-log .chat-form { display: flex; gap: 0.3rem; padding: 0.4rem 0.7rem 0.6rem; }
+.game-log .chat-form input[type="text"] { flex: 1; font: inherit; padding: 0.15rem 0.4rem; }
+.game-log .chat-form input[type="submit"] { font: inherit; }
 
 /* snap ghost while dragging */
 .snap-ghost {
