@@ -5,18 +5,21 @@ class GamePiece < ApplicationRecord
 
   after_update_commit :broadcast_replace
 
-  # Last write wins; a dropped piece snaps to the board grid and comes to the
-  # top of its map.
+  # Last write wins; a dropped piece snaps to the grid of the layout board
+  # under it (coordinates are map space; the grid is board-local) and comes to
+  # the top of its map.
   def move_to!(x, y)
-    x, y = snapping_board.snap_point(x, y) if snapping_board
+    if (entry = layout_entry_at(x, y))
+      local_x, local_y = entry.board.snap_point(x - entry.x, y - entry.y)
+      x = local_x + entry.x
+      y = local_y + entry.y
+    end
     top = game.game_pieces.where(game_map_id:).maximum(:z_order).to_i
     update!(x:, y:, z_order: top + 1)
   end
 
-  # Pieces on multi-board maps carry no board (the .vsav board selection isn't
-  # parsed yet); the viewer renders the map's first board, so snap to its grid.
-  def snapping_board
-    board || game_map&.boards&.first
+  def layout_entry_at(x, y)
+    game_map && game.board_layout(game_map).entry_at(x, y)
   end
 
   # Toggles the mask trait: obscured shows only the back image to everyone.

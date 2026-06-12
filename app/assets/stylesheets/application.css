@@ -80,7 +80,8 @@ ul.warning-list { font-size: 0.85rem; color: var(--muted); }
 }
 .viewer:active { cursor: grabbing; }
 .viewer .world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
-.viewer .world > img.board { display: block; user-select: none; -webkit-user-drag: none; }
+.viewer .board-tile { position: absolute; }
+.viewer .board-tile img.board, .viewer .board-tile div.board { display: block; user-select: none; -webkit-user-drag: none; }
 .viewer svg.grid-overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
 
 .viewer-bar {

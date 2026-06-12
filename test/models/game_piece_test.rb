@@ -20,9 +20,16 @@ class GamePieceTest < ActiveSupport::TestCase
     FileUtils.rm_rf(Rails.root.join("tmp", "vassal-test", Process.pid.to_s))
   end
 
+  def expected_snap(piece, x, y)
+    entry = piece.layout_entry_at(x, y)
+    return [ x, y ] unless entry
+    lx, ly = entry.board.snap_point(x - entry.x, y - entry.y)
+    [ lx + entry.x, ly + entry.y ]
+  end
+
   test "move_to! updates position and brings the piece to the top" do
     top = @game.game_pieces.where(game_map_id: @piece.game_map_id).maximum(:z_order)
-    expected = @piece.snapping_board ? @piece.snapping_board.snap_point(123, 456) : [ 123, 456 ]
+    expected = expected_snap(@piece, 123, 456)
     @piece.move_to!(123, 456)
     @piece.reload
     assert_equal expected, [ @piece.x, @piece.y ]
@@ -30,7 +37,7 @@ class GamePieceTest < ActiveSupport::TestCase
   end
 
   test "move_to! snaps drops near a hex center back onto it" do
-    board = @piece.snapping_board
+    board = @piece.layout_entry_at(500, 500)&.board
     skip "fixture piece has no snapping board with hex grid" unless board&.grid_type == "hex"
 
     @piece.move_to!(500, 500)

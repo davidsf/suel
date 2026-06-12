@@ -1,16 +1,16 @@
-<%# Shared pan/zoom viewer: toolbar + world. Pass board + game_module and a
-    captured `toolbar` string; pieces overlay via block. %>
+<%# Shared pan/zoom viewer: toolbar + world with one tile per board of the
+    layout (BoardLayout::Entry array). Pieces overlay via block. %>
+<% total_width = layout.map { |e| e.x + e.width }.max.to_i %>
+<% total_height = layout.map { |e| e.y + e.height }.max.to_i %>
 <div data-controller="pan-zoom board"
-     data-pan-zoom-width-value="<%= board.width || 0 %>"
-     data-pan-zoom-height-value="<%= board.height || 0 %>"
-     data-board-full-src-value="<%= board.image_filename.present? ? module_image_path(game_module, board.image_filename) : "" %>">
+     data-pan-zoom-width-value="<%= total_width %>"
+     data-pan-zoom-height-value="<%= total_height %>">
   <div class="viewer-bar">
     <%= toolbar %>
     <span class="spacer"></span>
-    <% if board.grid.present? %>
-      <span class="muted">rejilla: <%= board.grid_type %></span>
+    <% if layout.any? { |e| e.board.grid.present? } %>
       <button data-action="board#toggleGrid">Rejilla</button>
-      <% if board.numbering? %>
+      <% if layout.any? { |e| e.board.numbering? } %>
         <button data-action="board#toggleNumbering">Números</button>
       <% end %>
     <% end %>
@@ -23,17 +23,22 @@
                     pointermove->pan-zoom#pointerMove pointerup->pan-zoom#pointerUp
                     pointercancel->pan-zoom#pointerUp">
     <div class="world" data-pan-zoom-target="world">
-      <% if board.image_filename.present? %>
-        <%= image_tag board_preview_path(board, game_module),
-              class: "board", alt: board.name,
-              width: board.width, height: board.height,
-              decoding: "async",
-              data: { board_target: "image" } %>
-      <% elsif board.width.present? %>
-        <%# Imageless board (player hand): plain surface %>
-        <div class="board" style="width: <%= board.width %>px; height: <%= board.height %>px; background: #f0ead8;"></div>
+      <% layout.each do |entry| %>
+        <div class="board-tile" style="left: <%= entry.x %>px; top: <%= entry.y %>px;">
+          <% if entry.board.image_filename.present? %>
+            <%= image_tag board_preview_path(entry.board, game_module),
+                  class: "board", alt: entry.board.name,
+                  width: entry.board.width, height: entry.board.height,
+                  decoding: "async",
+                  data: { board_target: "image",
+                          full_src: module_image_path(game_module, entry.board.image_filename) } %>
+          <% elsif entry.board.width.present? %>
+            <%# Imageless board (player hand): plain surface %>
+            <div class="board" style="width: <%= entry.board.width %>px; height: <%= entry.board.height %>px; background: #f0ead8;"></div>
+          <% end %>
+          <%= grid_overlay(entry.board) %>
+        </div>
       <% end %>
-      <%= grid_overlay(board) %>
       <%= yield %>
     </div>
   </div>

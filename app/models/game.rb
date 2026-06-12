@@ -13,6 +13,7 @@ class Game < ApplicationRecord
   validate :scenario_must_be_ready, on: :create
 
   delegate :sides, to: :game_module
+  delegate :board_layout, to: :scenario
 
   def free_sides
     sides - players.pluck(:side)

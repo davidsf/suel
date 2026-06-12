@@ -11,6 +11,7 @@ class GameModule < ApplicationRecord
   has_many :prototypes, dependent: :destroy
   has_many :piece_definitions, -> { order(:position) }, dependent: :destroy
   has_many :scenarios, dependent: :destroy
+  has_many :games, dependent: :destroy
 
   enum :status, STATUSES.index_by(&:itself), default: "pending"
 

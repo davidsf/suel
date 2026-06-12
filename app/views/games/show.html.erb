@@ -1,6 +1,6 @@
 <% content_for :title, "#{@game.name}" %>
 
-<% if @board.nil? %>
+<% if @layout.empty? %>
   <p><%= link_to "← Partidas", games_path %></p>
   <h1><%= @game.name %></h1>
   <p class="muted">La partida no tiene fichas sobre tableros conocidos.</p>
@@ -40,7 +40,7 @@
     <%= turbo_stream_from @game %>
 
     <%= render layout: "boards/viewer",
-          locals: { board: @board, game_module: @game_module, toolbar: } do %>
+          locals: { layout: @layout, game_module: @game_module, toolbar: } do %>
       <% @pieces.each do |piece| %>
         <%= render "game_pieces/game_piece", game_piece: piece, game_module: @game_module %>
       <% end %>

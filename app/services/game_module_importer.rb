@@ -39,6 +39,8 @@ class GameModuleImporter
   end
 
   def reset_children
+    # Games reference scenarios/maps/boards; a reimport invalidates them.
+    @game_module.games.destroy_all
     @game_module.scenarios.destroy_all
     @game_module.piece_definitions.delete_all
     @game_module.game_maps.destroy_all
@@ -218,8 +220,9 @@ class GameModuleImporter
   end
 
   def insert_scenario_pieces(scenario, commands)
-    pieces = {}   # id => attrs hash
-    stacks = []   # [{map:, x:, y:, member_ids: []}]
+    pieces = {}        # id => attrs hash
+    stacks = []        # [{map:, x:, y:, member_ids: []}]
+    board_setup = {}   # map identifier => board selection entries
     z = 0
 
     commands.each do |leaf|
@@ -239,8 +242,12 @@ class GameModuleImporter
           piece[:x] = command.x
           piece[:y] = command.y
         end
+      when Vassal::Commands::BoardSetup
+        board_setup[command.map_id] = command.boards if command.boards.any?
       end
     end
+
+    scenario.update!(board_setup:)
 
     # Stack members carry no position of their own; spread them at the stack's
     # coordinates preserving the stack order for z.
@@ -255,13 +262,15 @@ class GameModuleImporter
     end
 
     now = Time.current
+    layouts = Hash.new { |h, map| h[map] = scenario.board_layout(map) }
     rows = pieces.values.map do |piece|
       identifier = piece[:map_identifier]
       game_map = identifier && @maps_by_identifier[identifier]
+      board = game_map && layouts[game_map].entry_at(piece[:x].to_i, piece[:y].to_i)&.board
       piece.merge(
         scenario_id: scenario.id,
         game_map_id: game_map&.id,
-        board_id: resolve_board(game_map)&.id,
+        board_id: board&.id,
         created_at: now, updated_at: now
       )
     end

@@ -39,7 +39,7 @@ class GamesController < ApplicationController
     map_ids = placed.group(:game_map_id).order(count_all: :desc).count.keys
     @maps = map_ids.filter_map { |map_id| GameMap.includes(:boards).find_by(id: map_id) }
     @game_map = @maps.find { |m| m.id == params[:map].to_i } || @maps.first
-    @board = @game_map&.boards&.first
+    @layout = @game_map ? @game.board_layout(@game_map).entries : []
 
     @pieces = @game_map ? placed.where(game_map_id: @game_map.id).order(:z_order) : GamePiece.none
   end

@@ -1,6 +1,6 @@
 <% content_for :title, "#{@scenario.name} — #{@game_module.name}" %>
 
-<% if @board.nil? %>
+<% if @layout.empty? %>
   <p><%= link_to "← #{@game_module.name}", game_module_path(@game_module) %></p>
   <h1><%= @scenario.name %></h1>
   <p class="muted">
@@ -31,7 +31,7 @@
   <% end %>
 
   <%= render layout: "boards/viewer",
-        locals: { board: @board, game_module: @game_module, toolbar: } do %>
+        locals: { layout: @layout, game_module: @game_module, toolbar: } do %>
     <% stack_offsets = Hash.new(0) %>
     <% @pieces.each do |piece| %>
       <% offset = stack_offsets["#{piece.x},#{piece.y}"] %>

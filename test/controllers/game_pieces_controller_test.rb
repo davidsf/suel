@@ -26,7 +26,13 @@ class GamePiecesControllerTest < ActionDispatch::IntegrationTest
   test "a player can move a piece and the change is broadcast" do
     sign_in_as users(:one)
 
-    expected = @piece.snapping_board ? @piece.snapping_board.snap_point(100, 200) : [ 100, 200 ]
+    expected =
+      if (entry = @piece.layout_entry_at(100, 200))
+        lx, ly = entry.board.snap_point(100 - entry.x, 200 - entry.y)
+        [ lx + entry.x, ly + entry.y ]
+      else
+        [ 100, 200 ]
+      end
     assert_turbo_stream_broadcasts(@game, count: 1) do
       patch move_game_piece_path(@game, @piece), params: { x: 100, y: 200 }
     end

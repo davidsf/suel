@@ -8,5 +8,6 @@
 <% end %>
 
 <%= render layout: "boards/viewer",
-      locals: { board: @board, game_module: @game_module, toolbar: } do %>
+      locals: { layout: [ BoardLayout::Entry.new(board: @board, x: 0, y: 0) ],
+                game_module: @game_module, toolbar: } do %>
 <% end %>
