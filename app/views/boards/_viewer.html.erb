@@ -10,6 +10,9 @@
     <% if board.grid.present? %>
       <span class="muted">rejilla: <%= board.grid_type %></span>
       <button data-action="board#toggleGrid">Rejilla</button>
+      <% if board.numbering? %>
+        <button data-action="board#toggleNumbering">Números</button>
+      <% end %>
     <% end %>
     <button data-action="pan-zoom#zoomOut">−</button>
     <button data-action="pan-zoom#zoomIn">+</button>

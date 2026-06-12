@@ -7,10 +7,27 @@ module GridHelper
     grid = board.grid
     return "".html_safe if grid.blank? || board.width.blank?
 
+    labels = Vassal::GridNumbering.labels(grid, board.width, board.height)
+
     content_tag(:svg, class: "grid-overlay", width: board.width, height: board.height,
                 viewBox: "0 0 #{board.width} #{board.height}",
-                xmlns: "http://www.w3.org/2000/svg", data: { board_target: "grid" }, hidden: true) do
-      grid_content(grid)
+                xmlns: "http://www.w3.org/2000/svg") do
+      lines = content_tag(:g, grid_content(grid),
+                          data: { board_target: "gridLines" }, hidden: !board.grid_visible?)
+      lines + numbering_overlay(board, labels)
+    end
+  end
+
+  def numbering_overlay(board, labels)
+    return "".html_safe if labels.empty?
+
+    numbering = board.numbering
+    color = numbering["color"].to_s.match?(/\A\d+,\d+,\d+\z/) ? "rgb(#{numbering['color']})" : "rgba(120,30,20,0.9)"
+    font_size = numbering["fontSize"].to_i.clamp(8, 48)
+
+    content_tag(:g, data: { board_target: "numbering" }, hidden: !board.numbering_visible?,
+                fill: color, "font-size": font_size, "text-anchor": "middle") do
+      safe_join(labels.map { |l| content_tag(:text, l[:text], x: l[:x], y: l[:y]) })
     end
   end
 

@@ -1,8 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Board extras: grid toggle and preview-to-full image swap.
+// Board extras: grid/numbering toggles and preview-to-full image swap.
 export default class extends Controller {
-  static targets = ["grid", "image"]
+  static targets = ["gridLines", "numbering", "image"]
   static values = { fullSrc: String }
 
   connect() {
@@ -15,6 +15,10 @@ export default class extends Controller {
   }
 
   toggleGrid() {
-    this.gridTargets.forEach(grid => grid.hidden = !grid.hidden)
+    this.gridLinesTargets.forEach(g => g.hidden = !g.hidden)
+  }
+
+  toggleNumbering() {
+    this.numberingTargets.forEach(g => g.hidden = !g.hidden)
   }
 }
