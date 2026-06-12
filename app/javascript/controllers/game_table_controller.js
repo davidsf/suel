@@ -199,11 +199,19 @@ export default class extends Controller {
     if (this.ghost) this.ghost.hidden = true
   }
 
-  // First click on a collapsed stack expands it; clicking an expanded (or
-  // lone) piece selects it.
+  // First click on a collapsed stack expands it; clicking an expanded piece
+  // selects it and brings it to the top of the stack; lone pieces just select.
   pieceClicked(piece) {
     if (this.toggleStack(piece)) return
+
+    const stacked = (this.stacks().get(this.stackKey(piece)) || []).length > 1
     this.select(piece)
+    if (stacked) {
+      this.patch(piece.dataset.moveUrl, {
+        x: Math.round(parseFloat(piece.style.left)),
+        y: Math.round(parseFloat(piece.style.top))
+      })
+    }
   }
 
   // Expands the piece's stack if it was collapsed. Returns true when it did.
