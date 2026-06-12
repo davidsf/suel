@@ -11,6 +11,9 @@
 
 * { box-sizing: border-box; }
 
+/* Author display rules (flex, etc.) must not defeat the hidden attribute */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -156,7 +159,7 @@ svg.grid-overlay g[hidden] { display: none; }
 }
 .game-log .log-entry { padding: 0.1rem 0; border-top: 1px solid #f0ece2; }
 .game-log .chat-form { display: flex; gap: 0.3rem; padding: 0.4rem 0.7rem 0.6rem; }
-.game-log .chat-form input[type="text"] { flex: 1; font: inherit; padding: 0.15rem 0.4rem; }
+.game-log .chat-form input[type="text"] { flex: 1; min-width: 0; font: inherit; padding: 0.15rem 0.4rem; }
 .game-log .chat-form input[type="submit"] { font: inherit; }
 
 /* snap ghost while dragging */

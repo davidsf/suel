@@ -69,7 +69,8 @@
       </div>
       <%= form_with url: game_messages_path(@game), method: :post, class: "chat-form",
             data: { controller: "reset-form", action: "turbo:submit-end->reset-form#reset" } do |form| %>
-        <%= form.text_field :body, placeholder: "Escribe un mensaje…", maxlength: 500,
+        <%# size: nil — Rails copia maxlength a size, y size=500 desborda el panel %>
+        <%= form.text_field :body, placeholder: "Escribe un mensaje…", maxlength: 500, size: nil,
               autocomplete: "off", required: true %>
         <%= form.submit "Enviar" %>
       <% end %>
