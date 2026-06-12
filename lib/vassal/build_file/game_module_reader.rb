@@ -137,6 +137,7 @@ module Vassal
           "name" => node["name"],
           "path" => path,
           "use_parent_grid" => node["useParentGrid"] == "true",
+          "location_format" => node["locationFormat"].presence,
           "grid" => node.children.filter_map { |c| read_grid(c) }.first
         }.compact
       end

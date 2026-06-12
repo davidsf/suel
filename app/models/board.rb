@@ -27,4 +27,9 @@ class Board < ApplicationRecord
   def snap_point(x, y)
     Vassal::GridSnap.snap(grid, x, y)
   end
+
+  # VASSAL-style location name for a board-local point ("1015", a zone...)
+  def location_name(x, y)
+    Vassal::GridLocation.name(grid, x, y, width: width.to_i, height: height.to_i)
+  end
 end

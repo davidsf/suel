@@ -22,6 +22,11 @@ class GamePiece < ApplicationRecord
     game_map && game.board_layout(game_map).entry_at(x, y)
   end
 
+  # Where the piece sits, in module terms ("1015", "Turn 3", a zone name...)
+  def location_name
+    layout_entry_at(x.to_i, y.to_i)&.location_name(x.to_i, y.to_i)
+  end
+
   # Toggles the mask trait: obscured shows only the back image to everyone.
   def flip!(by:)
     update_trait("mask") do |trait|

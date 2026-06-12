@@ -38,7 +38,7 @@
       <% stack_offsets["#{piece.x},#{piece.y}"] += 1 %>
       <div class="piece" id="piece_<%= piece.id %>"
            style="left: <%= piece.x.to_i + offset * 6 %>px; top: <%= piece.y.to_i - offset * 6 %>px; z-index: <%= piece.z_order + 1 %>;"
-           title="<%= piece.name %>">
+           title="<%= [ piece.name, piece.location_name ].compact_blank.join(" — ") %>">
         <%= render "pieces/piece", traits: piece.traits, game_module: @game_module %>
       </div>
     <% end %>

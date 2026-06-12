@@ -10,6 +10,11 @@ class BoardLayout
     def contains?(px, py)
       width.positive? && px >= x && px < x + width && py >= y && py < y + height
     end
+
+    # Location name for a point in map coordinates.
+    def location_name(map_x, map_y)
+      board.location_name(map_x - x, map_y - y)
+    end
   end
 
   def initialize(game_map, setup_entries)
