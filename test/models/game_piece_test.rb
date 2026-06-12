@@ -59,6 +59,39 @@ class GamePieceTest < ActiveSupport::TestCase
     assert_equal level, restored
   end
 
+  test "single-image layers toggle activation on and off" do
+    piece = @game.game_pieces.create!(
+      name: "marker", x: 0, y: 0, game_map: @piece.game_map,
+      traits: [
+        { "kind" => "layer", "name" => "Column", "images" => [ "m.png" ], "value" => 1, "always_active" => false },
+        { "kind" => "basic", "image" => "b.png", "name" => "marker" }
+      ]
+    )
+    assert piece.cycle_layer!(0, 1)
+    assert_equal(-1, piece.reload.traits.first["value"], "active marker toggles off")
+    assert piece.cycle_layer!(0, 1)
+    assert_equal 1, piece.reload.traits.first["value"], "inactive marker toggles on"
+  end
+
+  test "non-always-active multi-level layers deactivate below level 1 and clamp at top" do
+    piece = @game.game_pieces.create!(
+      name: "steps", x: 0, y: 0, game_map: @piece.game_map,
+      traits: [
+        { "kind" => "layer", "name" => "Steps", "images" => [ "a.png", "b.png", "c.png" ],
+          "value" => 1, "always_active" => false },
+        { "kind" => "basic", "image" => "b.png", "name" => "steps" }
+      ]
+    )
+    assert piece.cycle_layer!(0, -1)
+    assert_equal(-1, piece.reload.traits.first["value"], "below level 1 deactivates")
+    assert piece.cycle_layer!(0, 1)
+    assert_equal 1, piece.reload.traits.first["value"], "reactivates at level 1"
+    2.times { piece.cycle_layer!(0, 1) }
+    assert_equal 3, piece.reload.traits.first["value"]
+    assert piece.cycle_layer!(0, 1)
+    assert_equal 3, piece.reload.traits.first["value"], "clamps at the top level"
+  end
+
   test "flip! toggles obscured_by when the piece has a mask" do
     piece = @game.game_pieces.detect { |p| p.traits.any? { |t| t["kind"] == "mask" } }
     if piece

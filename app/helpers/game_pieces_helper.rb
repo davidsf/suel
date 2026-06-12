@@ -20,8 +20,9 @@ module GamePiecesHelper
   # HTML is broadcast to every viewer; per-viewer behavior lives outside).
   def game_piece_data(game_piece)
     game = game_piece.game
-    layers = game_piece.traits.each_with_index.filter_map do |trait, _i|
-      trait["name"].presence || "Capa" if trait["kind"] == "layer"
+    layers = game_piece.traits.filter_map do |trait|
+      next unless trait["kind"] == "layer"
+      { name: trait["name"].presence || "Capa", levels: (trait["images"] || []).size }
     end
     {
       action: "pointerdown->game-table#pieceDown",

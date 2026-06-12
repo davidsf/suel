@@ -118,21 +118,20 @@ export default class extends Controller {
     this.rotateRightTarget.hidden = !rotatable
 
     this.layerButtonsTarget.replaceChildren()
-    JSON.parse(piece.dataset.layers || "[]").forEach((name, index) => {
+    JSON.parse(piece.dataset.layers || "[]").forEach((layer, index) => {
       const group = document.createElement("span")
       group.className = "layer-group"
 
-      const down = document.createElement("button")
-      down.textContent = `${name} −`
-      down.title = `${name}: nivel anterior`
-      down.addEventListener("click", () => this.cycleLayer(index, -1))
-
-      const up = document.createElement("button")
-      up.textContent = `${name} +`
-      up.title = `${name}: siguiente nivel`
-      up.addEventListener("click", () => this.cycleLayer(index, 1))
-
-      group.append(down, up)
+      if (layer.levels <= 1) {
+        // On/off marker layer: a single toggle button
+        const toggle = this.layerButton(layer.name, `${layer.name}: mostrar/ocultar`, index, 1)
+        group.append(toggle)
+      } else {
+        group.append(
+          this.layerButton(`${layer.name} −`, `${layer.name}: nivel anterior`, index, -1),
+          this.layerButton(`${layer.name} +`, `${layer.name}: siguiente nivel`, index, 1)
+        )
+      }
       this.layerButtonsTarget.appendChild(group)
     })
 
@@ -150,6 +149,15 @@ export default class extends Controller {
   rotate(direction) {
     const piece = this.selectedPiece()
     if (piece) this.patch(piece.dataset.rotateUrl, { direction })
+  }
+
+  layerButton(text, title, index, delta) {
+    const button = document.createElement("button")
+    button.type = "button"
+    button.textContent = text
+    button.title = title
+    button.addEventListener("click", () => this.cycleLayer(index, delta))
+    return button
   }
 
   cycleLayer(index, delta = 1) {

@@ -27,14 +27,26 @@ class GamePiece < ApplicationRecord
     end
   end
 
-  # Cycles a layer trait through its levels (1-based; inactive becomes level 1).
+  # Steps a layer trait following VASSAL's value semantics: positive = active
+  # at that 1-based level, negative = inactive. Single-image layers are on/off
+  # markers; multi-level always-active layers wrap; the rest deactivate below
+  # level 1 and clamp at the top.
   def cycle_layer!(index, delta)
     update_trait("layer", index) do |trait|
       size = (trait["images"] || []).size
       return false if size.zero?
-      level = trait["value"].to_i
-      level = 1 unless level.positive?
-      trait["value"] = ((level - 1 + delta) % size) + 1
+
+      value = trait["value"].to_i
+      trait["value"] =
+        if size == 1
+          value.positive? ? -1 : 1
+        elsif trait["always_active"]
+          level = value.positive? ? value : 1
+          ((level - 1 + delta) % size) + 1
+        else
+          level = (value.positive? ? value : 0) + delta
+          level < 1 ? -1 : level.clamp(1, size)
+        end
     end
   end
 
