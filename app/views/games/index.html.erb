@@ -1,0 +1,31 @@
+<h1>Partidas</h1>
+
+<% if @games.any? %>
+  <table class="listing">
+    <% @games.each do |game| %>
+      <tr>
+        <td><%= link_to game.name, game %></td>
+        <td class="muted"><%= game.game_module.name %> · <%= game.scenario.name %></td>
+        <td class="muted"><%= game.players.map { |p| "#{p.side}: #{p.user.email_address}" }.join(" · ") %></td>
+        <td class="muted"><%= game.free_sides.any? ? "#{game.free_sides.size} bandos libres" : "completa" %></td>
+      </tr>
+    <% end %>
+  </table>
+<% else %>
+  <p class="muted">No hay partidas todavía. Crea una desde la página de un módulo, eligiendo escenario.</p>
+<% end %>
+
+<h2>Crear partida</h2>
+<p class="muted">Elige un escenario de un módulo:</p>
+<table class="listing">
+  <% GameModule.ready.order(:name).each do |game_module| %>
+    <% game_module.scenarios.ready.each do |scenario| %>
+      <tr>
+        <td><%= game_module.name %></td>
+        <td><%= scenario.name %></td>
+        <td class="muted"><%= scenario.scenario_pieces.count %> fichas</td>
+        <td><%= link_to "Crear partida", new_game_path(scenario_id: scenario.id) %></td>
+      </tr>
+    <% end %>
+  <% end %>
+</table>

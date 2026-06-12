@@ -1,0 +1,23 @@
+<h1>Nueva partida</h1>
+<p class="muted"><%= @scenario.game_module.name %> — escenario <%= @scenario.name %></p>
+
+<%= form_with model: @game, url: games_path do |form| %>
+  <% if @game.errors.any? %>
+    <ul>
+      <% @game.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <%= form.hidden_field :scenario_id, value: @scenario.id %>
+  <p>
+    <%= form.label :name, "Nombre de la partida" %><br>
+    <%= form.text_field :name, required: true, size: 50 %>
+  </p>
+  <p>
+    <%= form.label :side, "Tu bando" %><br>
+    <%= form.select :side, @game.game_module.sides %>
+  </p>
+  <p><%= form.submit "Crear partida" %></p>
+<% end %>

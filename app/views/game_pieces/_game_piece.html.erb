@@ -1,0 +1,8 @@
+<%# Shared by the initial table render AND Turbo Stream broadcasts: must be
+    identical for every viewer (no Current, no per-viewer flags). %>
+<div class="piece table-piece" id="<%= dom_id(game_piece) %>"
+     style="left: <%= game_piece.x.to_i %>px; top: <%= game_piece.y.to_i %>px; z-index: <%= game_piece.z_order + 1 %>;"
+     title="<%= game_piece.name %>"
+     <%= tag.attributes(data: game_piece_data(game_piece)) %>>
+  <%= render "pieces/piece", traits: displayed_traits(game_piece.traits), game_module: game_module %>
+</div>

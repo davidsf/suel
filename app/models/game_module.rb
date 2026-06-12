@@ -30,6 +30,17 @@ class GameModule < ApplicationRecord
 
   def extracted? = File.directory?(extracted_dir)
 
+  # Player sides from the module's PlayerRoster, derived at runtime from the
+  # persisted build_tree (the importer doesn't store them separately). Modules
+  # without a roster get two generic sides so games are always creatable.
+  def sides
+    roster = (build_tree&.dig("children") || [])
+      .find { |node| node["class"] == "VASSAL.build.module.PlayerRoster" }
+    entries = (roster&.dig("children") || [])
+      .filter_map { |node| node["text"] if node["class"] == "entry" }
+    entries.presence || [ "Bando A", "Bando B" ]
+  end
+
   private
 
   def assign_slug

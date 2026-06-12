@@ -114,6 +114,18 @@ ul.warning-list { font-size: 0.85rem; color: var(--muted); }
 .palette-pieces figure .piece-box { position: relative; display: inline-block; min-width: 40px; min-height: 40px; }
 .palette-pieces figcaption { font-size: 0.72rem; max-width: 9rem; color: var(--muted); overflow-wrap: break-word; }
 
+/* ---- game table ---- */
+.table-piece { cursor: pointer; touch-action: none; }
+.table-piece.selected { outline: 3px solid #ffd84d; outline-offset: 2px; border-radius: 3px; }
+.piece-toolbar {
+  position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  padding: 0.5rem 0.9rem; display: flex; gap: 0.5rem; align-items: center;
+  z-index: 1000;
+}
+.piece-toolbar button { font: inherit; padding: 0.15rem 0.6rem; }
+
 /* deck marker in scenario viewer */
 .deck-marker {
   position: absolute; transform: translate(-50%, -50%);

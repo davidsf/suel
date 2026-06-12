@@ -26,6 +26,7 @@
   <body>
     <header class="site">
       <%= link_to "webvassal", root_path %>
+      <%= link_to "Partidas", games_path, style: "font-weight: 400; opacity: 0.85" %>
       <div class="actions">
         <% if Current.user&.admin? %>
           <%= link_to "Subir módulo", new_admin_game_module_path %>
@@ -34,6 +35,7 @@
           <%= button_to "Salir", session_path, method: :delete, form: { style: "display:inline" } %>
         <% else %>
           <%= link_to "Entrar", new_session_path %>
+          <%= link_to "Crear cuenta", new_registration_path %>
         <% end %>
       </div>
     </header>

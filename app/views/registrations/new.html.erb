@@ -1,0 +1,18 @@
+<h1>Crear cuenta</h1>
+
+<%= form_with model: @user, url: registration_path do |form| %>
+  <% if @user.errors.any? %>
+    <ul>
+      <% @user.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <p><%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Email" %></p>
+  <p><%= form.password_field :password, required: true, autocomplete: "new-password", placeholder: "Contraseña", maxlength: 72 %></p>
+  <p><%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", placeholder: "Repite la contraseña", maxlength: 72 %></p>
+  <p><%= form.submit "Crear cuenta" %></p>
+<% end %>
+
+<p><%= link_to "¿Ya tienes cuenta? Entra", new_session_path %></p>

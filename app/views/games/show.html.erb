@@ -1,0 +1,57 @@
+<% content_for :title, "#{@game.name}" %>
+
+<% if @board.nil? %>
+  <p><%= link_to "← Partidas", games_path %></p>
+  <h1><%= @game.name %></h1>
+  <p class="muted">La partida no tiene fichas sobre tableros conocidos.</p>
+<% else %>
+  <% content_for :main_class, "full" %>
+
+  <% toolbar = capture do %>
+    <%= link_to "← Partidas", games_path %>
+    <strong><%= @game.name %></strong>
+    <% if @maps.size > 1 %>
+      <span class="muted">
+        <% @maps.each do |map| %>
+          <% if map == @game_map %>
+            <strong><%= map.name %></strong>
+          <% else %>
+            <%= link_to map.name, game_path(@game, map: map.id) %>
+          <% end %>
+        <% end %>
+      </span>
+    <% end %>
+    <span class="muted">
+      <% @game.players.each do |player| %>
+        <%= player.side %>: <%= player.user.email_address.split("@").first %><%= " (tú)" if player == @player %> ·
+      <% end %>
+    </span>
+    <% if @player.nil? %>
+      <% @game.free_sides.each do |side| %>
+        <%= button_to "Unirse como #{side}", game_players_path(@game, side: side),
+              method: :post, form: { style: "display:inline" } %>
+      <% end %>
+      <% if @game.free_sides.empty? %><span class="muted">(espectador)</span><% end %>
+    <% end %>
+  <% end %>
+
+  <div data-controller="game-table"
+       data-game-table-playable-value="<%= @player.present? %>">
+    <%= turbo_stream_from @game %>
+
+    <%= render layout: "boards/viewer",
+          locals: { board: @board, game_module: @game_module, toolbar: } do %>
+      <% @pieces.each do |piece| %>
+        <%= render "game_pieces/game_piece", game_piece: piece, game_module: @game_module %>
+      <% end %>
+    <% end %>
+
+    <div class="piece-toolbar" data-game-table-target="toolbar" hidden>
+      <span data-game-table-target="pieceName" class="muted"></span>
+      <button data-game-table-target="flipButton" data-action="game-table#flip">Voltear</button>
+      <button data-game-table-target="rotateLeft" data-action="game-table#rotateLeft">⟲</button>
+      <button data-game-table-target="rotateRight" data-action="game-table#rotateRight">⟳</button>
+      <span data-game-table-target="layerButtons"></span>
+    </div>
+  </div>
+<% end %>

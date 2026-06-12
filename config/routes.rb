@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   resource :session
+  resource :registration, only: %i[new create]
   resources :passwords, param: :token
 
   root "game_modules#index"
@@ -9,6 +10,18 @@ Rails.application.routes.draw do
     get :palette, to: "palettes#show"
     resources :boards, only: :show
     resources :scenarios, only: :show
+  end
+
+  resources :games, only: %i[index new create show] do
+    resources :players, only: :create
+    resources :pieces, only: [], controller: "game_pieces" do
+      member do
+        patch :move
+        patch :flip
+        patch :rotate
+        patch :cycle_layer
+      end
+    end
   end
 
   namespace :admin do
