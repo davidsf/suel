@@ -26,12 +26,13 @@ class GamePiecesControllerTest < ActionDispatch::IntegrationTest
   test "a player can move a piece and the change is broadcast" do
     sign_in_as users(:one)
 
+    expected = @piece.snapping_board ? @piece.snapping_board.snap_point(100, 200) : [ 100, 200 ]
     assert_turbo_stream_broadcasts(@game, count: 1) do
       patch move_game_piece_path(@game, @piece), params: { x: 100, y: 200 }
     end
     assert_response :success
     assert_match "game_piece_#{@piece.id}", response.body
-    assert_equal [ 100, 200 ], [ @piece.reload.x, @piece.y ]
+    assert_equal expected, [ @piece.reload.x, @piece.y ]
   end
 
   test "an authenticated spectator cannot move pieces" do

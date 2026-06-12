@@ -22,10 +22,23 @@ class GamePieceTest < ActiveSupport::TestCase
 
   test "move_to! updates position and brings the piece to the top" do
     top = @game.game_pieces.where(game_map_id: @piece.game_map_id).maximum(:z_order)
+    expected = @piece.snapping_board ? @piece.snapping_board.snap_point(123, 456) : [ 123, 456 ]
     @piece.move_to!(123, 456)
     @piece.reload
-    assert_equal [ 123, 456 ], [ @piece.x, @piece.y ]
+    assert_equal expected, [ @piece.x, @piece.y ]
     assert_equal top + 1, @piece.z_order
+  end
+
+  test "move_to! snaps drops near a hex center back onto it" do
+    board = @piece.snapping_board
+    skip "fixture piece has no snapping board with hex grid" unless board&.grid_type == "hex"
+
+    @piece.move_to!(500, 500)
+    cx, cy = @piece.reload.x, @piece.y
+    @piece.move_to!(cx + 4, cy + 3)
+    @piece.reload
+    assert_equal [ cx, cy ], [ @piece.x, @piece.y ],
+      "a drop near a hex center lands exactly on it (snap is a fixed point)"
   end
 
   test "rotate! steps the facing angle and persists" do

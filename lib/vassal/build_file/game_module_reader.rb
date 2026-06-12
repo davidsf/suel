@@ -107,6 +107,7 @@ module Vassal
             "dx" => node["dx"]&.to_f, "dy" => node["dy"]&.to_f,
             "x0" => node["x0"]&.to_i, "y0" => node["y0"]&.to_i,
             "sideways" => node["sideways"] == "true",
+            "snap" => node["snapTo"] != "false",
             "visible" => node["visible"] == "true",
             "color" => node["color"].presence,
             "class" => (node.class_name unless node.class_name.start_with?("VASSAL.")),
@@ -135,6 +136,7 @@ module Vassal
         {
           "name" => node["name"],
           "path" => path,
+          "use_parent_grid" => node["useParentGrid"] == "true",
           "grid" => node.children.filter_map { |c| read_grid(c) }.first
         }.compact
       end

@@ -4,4 +4,9 @@ class Board < ApplicationRecord
   has_many :scenario_pieces, dependent: :nullify
 
   def grid_type = grid&.dig("type") || "none"
+
+  # Nearest legal position per the board's grid (VASSAL snap-on-drop).
+  def snap_point(x, y)
+    Vassal::GridSnap.snap(grid, x, y)
+  end
 end
