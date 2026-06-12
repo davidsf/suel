@@ -22,7 +22,11 @@ module GamePiecesHelper
     game = game_piece.game
     layers = game_piece.traits.filter_map do |trait|
       next unless trait["kind"] == "layer"
-      { name: trait["name"].presence || "Capa", levels: (trait["images"] || []).size }
+      levels = (trait["images"] || []).size
+      # A 2-level always-active layer flips between two states (often
+      # transparent/marker), so ± buttons are redundant: it's a toggle.
+      toggle = levels <= 1 || (levels == 2 && trait["always_active"])
+      { name: trait["name"].presence || "Capa", toggle: }
     end
     {
       action: "pointerdown->game-table#pieceDown",

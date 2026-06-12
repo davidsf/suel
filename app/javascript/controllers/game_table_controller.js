@@ -122,9 +122,9 @@ export default class extends Controller {
       const group = document.createElement("span")
       group.className = "layer-group"
 
-      if (layer.levels <= 1) {
-        // On/off marker layer: a single toggle button
-        const toggle = this.layerButton(layer.name, `${layer.name}: mostrar/ocultar`, index, 1)
+      if (layer.toggle) {
+        // On/off layer: a single toggle button
+        const toggle = this.layerButton(layer.name, `${layer.name}: alternar`, index, 1)
         group.append(toggle)
       } else {
         group.append(
