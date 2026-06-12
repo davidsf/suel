@@ -52,6 +52,11 @@ class GamePieceTest < ActiveSupport::TestCase
     assert piece.cycle_layer!(0, 1)
     after = piece.reload.traits.find { |t| t["kind"] == "layer" }["value"]
     assert_equal ((level - 1 + 1) % size) + 1, after
+
+    # Going back down restores the previous level (steps can be regained)
+    assert piece.cycle_layer!(0, -1)
+    restored = piece.reload.traits.find { |t| t["kind"] == "layer" }["value"]
+    assert_equal level, restored
   end
 
   test "flip! toggles obscured_by when the piece has a mask" do

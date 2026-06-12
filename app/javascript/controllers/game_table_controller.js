@@ -119,10 +119,21 @@ export default class extends Controller {
 
     this.layerButtonsTarget.replaceChildren()
     JSON.parse(piece.dataset.layers || "[]").forEach((name, index) => {
-      const button = document.createElement("button")
-      button.textContent = name
-      button.addEventListener("click", () => this.cycleLayer(index))
-      this.layerButtonsTarget.appendChild(button)
+      const group = document.createElement("span")
+      group.className = "layer-group"
+
+      const down = document.createElement("button")
+      down.textContent = `${name} −`
+      down.title = `${name}: nivel anterior`
+      down.addEventListener("click", () => this.cycleLayer(index, -1))
+
+      const up = document.createElement("button")
+      up.textContent = `${name} +`
+      up.title = `${name}: siguiente nivel`
+      up.addEventListener("click", () => this.cycleLayer(index, 1))
+
+      group.append(down, up)
+      this.layerButtonsTarget.appendChild(group)
     })
 
     this.toolbarTarget.hidden = false
@@ -141,9 +152,9 @@ export default class extends Controller {
     if (piece) this.patch(piece.dataset.rotateUrl, { direction })
   }
 
-  cycleLayer(index) {
+  cycleLayer(index, delta = 1) {
     const piece = this.selectedPiece()
-    if (piece) this.patch(piece.dataset.cycleLayerUrl, { index, delta: 1 })
+    if (piece) this.patch(piece.dataset.cycleLayerUrl, { index, delta })
   }
 
   // --- server sync ---------------------------------------------------------

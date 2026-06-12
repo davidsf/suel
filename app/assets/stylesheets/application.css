@@ -125,6 +125,7 @@ ul.warning-list { font-size: 0.85rem; color: var(--muted); }
   z-index: 1000;
 }
 .piece-toolbar button { font: inherit; padding: 0.15rem 0.6rem; }
+.piece-toolbar .layer-group { display: inline-flex; gap: 0.15rem; }
 
 /* deck marker in scenario viewer */
 .deck-marker {
