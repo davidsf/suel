@@ -30,6 +30,29 @@ class Vassal::GridSnapTest < ActiveSupport::TestCase
     assert_equal [ 41, 47 ], Vassal::GridSnap.snap(HEX.merge("snap" => false), 41, 47)
   end
 
+  test "edgesLegal snaps to hex side midpoints" do
+    grid = { "type" => "hex", "dx" => 60.0, "dy" => 52.0, "x0" => 0, "y0" => 0,
+             "snap" => true, "edges" => true }
+    # Side midpoint between centers (0,0) and (60,26) is (30,13)
+    assert_equal [ 30, 13 ], Vassal::GridSnap.snap(grid, 28, 12)
+    # Near a center the center still wins
+    assert_equal [ 0, 0 ], Vassal::GridSnap.snap(grid, 2, 1)
+  end
+
+  test "cornersLegal snaps to hex vertices" do
+    grid = { "type" => "hex", "dx" => 60.0, "dy" => 52.0, "x0" => 0, "y0" => 0,
+             "snap" => true, "corners" => true }
+    # Vertex of the hex centered at origin: (20, 26)
+    assert_equal [ 20, 26 ], Vassal::GridSnap.snap(grid, 22, 27)
+  end
+
+  test "edges and corners together pick the closest" do
+    grid = { "type" => "hex", "dx" => 60.0, "dy" => 52.0, "x0" => 0, "y0" => 0,
+             "snap" => true, "edges" => true, "corners" => true }
+    assert_equal [ 30, 13 ], Vassal::GridSnap.snap(grid, 29, 13), "closer to the side midpoint"
+    assert_equal [ 20, 26 ], Vassal::GridSnap.snap(grid, 21, 26), "closer to the vertex"
+  end
+
   test "square grids snap to the lattice" do
     square = { "type" => "square", "dx" => 50.0, "dy" => 50.0, "x0" => 0, "y0" => 0 }
     assert_equal [ 100, 150 ], Vassal::GridSnap.snap(square, 110, 140)

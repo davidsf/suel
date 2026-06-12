@@ -108,6 +108,8 @@ module Vassal
             "x0" => node["x0"]&.to_i, "y0" => node["y0"]&.to_i,
             "sideways" => node["sideways"] == "true",
             "snap" => node["snapTo"] != "false",
+            "edges" => node["edgesLegal"] == "true",
+            "corners" => node["cornersLegal"] == "true",
             "visible" => node["visible"] == "true",
             "color" => node["color"].presence,
             "class" => (node.class_name unless node.class_name.start_with?("VASSAL.")),

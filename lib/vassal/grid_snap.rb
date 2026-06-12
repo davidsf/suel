@@ -40,8 +40,59 @@ module Vassal
       x0 = grid["x0"].to_i
       y0 = grid["y0"].to_i
       px, py = grid["sideways"] ? [ y, x ] : [ x, y ]
-      sx, sy = nearest_hex_center(dx, dy, x0, y0, px, py)
+
+      center = nearest_hex_center(dx, dy, x0, y0, px, py)
+      sx, sy = snap_hex_target(grid, dx, dy, x0, y0, px, py, center)
+
       grid["sideways"] ? [ sy.round, sx.round ] : [ sx.round, sy.round ]
+    end
+
+    # HexGrid#snapTo: with edgesLegal/cornersLegal the nearest side midpoint
+    # or vertex competes with the center (checkCenter keeps the center when
+    # they all but coincide).
+    def snap_hex_target(grid, dx, dy, x0, y0, px, py, center)
+      edge = grid["edges"] ? hex_side(dx, dy, x0, y0, px, py) : nil
+      vertex = grid["corners"] ? hex_vertex(dx, dy, x0, y0, px, py) : nil
+      return center unless edge || vertex
+
+      target =
+        if edge && vertex
+          dist2(px, py, *edge) < dist2(px, py, *vertex) ? edge : vertex
+        else
+          edge || vertex
+        end
+      # checkCenter: prefer the true center over a target landing on it
+      dist2(*center, *target) <= 2 ? center : target
+    end
+
+    def dist2(x1, y1, x2, y2)
+      (x1 - x2)**2 + (y1 - y2)**2
+    end
+
+    # Ports of HexGrid#sideX/sideY/vertexX/vertexY, integer truncations
+    # included (they operate in rotated space like the callers).
+    def hex_side(dx, dy, x0, y0, x, y)
+      nx = ((x - x0 + dx / 4) * 2 / dx).floor
+      sx = (dx / 2 * nx + x0).to_i
+      sy =
+        if nx.even?
+          (dy / 2 * ((y - y0 + dy / 4) * 2 / dy).floor + y0).to_i
+        else
+          (dy / 2 * ((y - y0) * 2 / dy).floor + (dy / 4).to_i + y0).to_i
+        end
+      [ sx, sy ]
+    end
+
+    def hex_vertex(dx, dy, x0, y0, x, y)
+      ny = ((y - y0 + dy / 4) * 2 / dy).floor
+      vx =
+        if ny.even?
+          (2 * dx / 3 * ((x - x0 + dx / 3).floor * 3 / (2 * dx)).to_i + x0).to_i
+        else
+          (2 * dx / 3 * ((x - x0 + dx / 3 + dx / 3).floor * 3 / (2 * dx)).to_i - (dx / 3).to_i + x0).to_i
+        end
+      vy = (dy / 2 * ny + y0).to_i
+      [ vx, vy ]
     end
 
     # Hex centers form two rectangular lattices (even columns at x0 + 2dx·i,
