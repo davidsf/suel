@@ -6,7 +6,7 @@ import { Turbo } from "@hotwired/turbo-rails"
 // with pan_zoom: spectators' pointer events fall through to panning; players
 // dragging a piece stop propagation so the board doesn't pan underneath.
 export default class extends Controller {
-  static values = { playable: Boolean }
+  static values = { playable: Boolean, snapUrl: String, map: Number }
   static targets = ["toolbar", "pieceName", "flipButton", "rotateLeft", "rotateRight", "layerButtons"]
 
   connect() {
@@ -53,13 +53,17 @@ export default class extends Controller {
       if (Math.abs(e.clientX - drag.startX) + Math.abs(e.clientY - drag.startY) > 4) drag.moved = true
       piece.style.left = `${drag.startLeft + dx}px`
       piece.style.top = `${drag.startTop + dy}px`
-      if (drag.moved) piece.style.zIndex = 100000
+      if (drag.moved) {
+        piece.style.zIndex = 100000
+        this.previewSnap(piece)
+      }
     }
 
     const onUp = () => {
       piece.removeEventListener("pointermove", onMove)
       piece.removeEventListener("pointerup", onUp)
       piece.removeEventListener("pointercancel", onUp)
+      this.hideGhost()
       if (drag.moved) {
         this.patch(piece.dataset.moveUrl, {
           x: Math.round(parseFloat(piece.style.left)),
@@ -79,6 +83,45 @@ export default class extends Controller {
     const world = this.element.querySelector(".world")
     const matrix = new DOMMatrix(getComputedStyle(world).transform)
     return matrix.a || 1
+  }
+
+  // --- snap ghost ----------------------------------------------------------
+
+  // Throttled server-side snap preview: shows where the piece will land.
+  previewSnap(piece) {
+    if (!this.snapUrlValue) return
+    const now = performance.now()
+    if (now - (this.lastSnapAt || 0) < 80) return
+    this.lastSnapAt = now
+
+    const x = Math.round(parseFloat(piece.style.left))
+    const y = Math.round(parseFloat(piece.style.top))
+    const seq = (this.snapSeq = (this.snapSeq || 0) + 1)
+    fetch(`${this.snapUrlValue}?map=${this.mapValue}&x=${x}&y=${y}`,
+          { headers: { "Accept": "application/json" } })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        if (data && seq === this.snapSeq) this.showGhost(data)
+      })
+      .catch(() => {})
+  }
+
+  showGhost(data) {
+    if (!this.ghost) {
+      this.ghost = document.createElement("div")
+      this.ghost.className = "snap-ghost"
+      this.ghost.innerHTML = "<span></span>"
+      this.element.querySelector(".world").appendChild(this.ghost)
+    }
+    this.ghost.style.left = `${data.x}px`
+    this.ghost.style.top = `${data.y}px`
+    this.ghost.querySelector("span").textContent = data.location || ""
+    this.ghost.hidden = false
+  }
+
+  hideGhost() {
+    this.snapSeq = (this.snapSeq || 0) + 1 // discard in-flight previews
+    if (this.ghost) this.ghost.hidden = true
   }
 
   select(piece) {

@@ -30,6 +30,24 @@ class GamesController < ApplicationController
     render :new, status: :unprocessable_entity
   end
 
+  # Live snap preview while dragging: where would a piece land, and its
+  # location name. Read-only and cheap (pure geometry over the layout).
+  def snap
+    game = Game.find(params[:id])
+    game_map = GameMap.where(game_module_id: game.game_module_id).find(params[:map])
+    x = params[:x].to_i
+    y = params[:y].to_i
+
+    entry = game.board_layout(game_map).entry_at(x, y)
+    if entry
+      local_x, local_y = entry.board.snap_point(x - entry.x, y - entry.y)
+      render json: { x: local_x + entry.x, y: local_y + entry.y,
+                     location: entry.board.location_name(local_x, local_y) }
+    else
+      render json: { x:, y:, location: nil }
+    end
+  end
+
   def show
     @game = Game.includes(:game_module, players: :user).find(params[:id])
     @game_module = @game.game_module

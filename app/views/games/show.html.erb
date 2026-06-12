@@ -36,7 +36,9 @@
   <% end %>
 
   <div data-controller="game-table"
-       data-game-table-playable-value="<%= @player.present? %>">
+       data-game-table-playable-value="<%= @player.present? %>"
+       data-game-table-snap-url-value="<%= snap_game_path(@game) %>"
+       data-game-table-map-value="<%= @game_map.id %>">
     <%= turbo_stream_from @game %>
 
     <%= render layout: "boards/viewer",

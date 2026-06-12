@@ -13,6 +13,9 @@ Rails.application.routes.draw do
   end
 
   resources :games, only: %i[index new create show] do
+    member do
+      get :snap
+    end
     resources :players, only: :create
     resources :pieces, only: [], controller: "game_pieces" do
       member do

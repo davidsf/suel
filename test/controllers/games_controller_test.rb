@@ -44,6 +44,20 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Bando B", game.players.find_by(user: users(:two)).side
   end
 
+  test "snap preview returns the snapped point and location" do
+    game = create_game!
+    sign_in_as users(:one)
+    piece = game.game_pieces.where.not(game_map_id: nil).first
+
+    get snap_game_path(game, map: piece.game_map_id, x: 500, y: 500)
+    assert_response :success
+
+    data = response.parsed_body
+    entry = game.board_layout(piece.game_map).entry_at(500, 500)
+    lx, ly = entry.board.snap_point(500 - entry.x, 500 - entry.y)
+    assert_equal [ lx + entry.x, ly + entry.y ], [ data["x"], data["y"] ]
+  end
+
   test "spectators can watch the table" do
     game = create_game!
     sign_in_as users(:two)

@@ -130,6 +130,18 @@ svg.grid-overlay g[hidden] { display: none; }
 .piece-toolbar button { font: inherit; padding: 0.15rem 0.6rem; }
 .piece-toolbar .layer-group { display: inline-flex; gap: 0.15rem; }
 
+/* snap ghost while dragging */
+.snap-ghost {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 30px; height: 30px; border: 3px dashed #ffd84d; border-radius: 50%;
+  pointer-events: none; z-index: 99999;
+}
+.snap-ghost span {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  margin-top: 4px; white-space: nowrap;
+  font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000;
+}
+
 /* deck marker in scenario viewer */
 .deck-marker {
   position: absolute; transform: translate(-50%, -50%);
