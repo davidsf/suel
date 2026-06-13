@@ -111,6 +111,37 @@ class Game < ApplicationRecord
     game_module.decks.detect { |d| d.name == name }
   end
 
+  def deck_named_id(id)
+    game_module.decks.detect { |d| d.id == id.to_i }
+  end
+
+  # After a card is played hand → map: the transition is silent in the
+  # dispatcher (a replace to a not-yet-rendered node), so append it to the
+  # public map container explicitly. The actor drops it from their tray.
+  def after_card_played(card, by:)
+    broadcast_append_to self, target: ActionView::RecordIdentifier.dom_id(card.game_map, :pieces),
+      partial: "game_pieces/game_piece", locals: { game_piece: card, game_module: game_module }
+    broadcast_remove_to self, by, target: ActionView::RecordIdentifier.dom_id(card, :hand)
+    broadcast_hand_count(by)
+    log!("#{by} juega #{card.name}", kind: "deck")
+  end
+
+  # After a card is discarded to a deck. From the map, remove the public piece
+  # node (the dispatcher is silent once the card is in a deck). From a hand,
+  # update the owner's count badge. The log hides the identity for face-down
+  # destinations.
+  def after_card_discarded(card, deck:, by:, from_hand:)
+    if from_hand
+      broadcast_remove_to self, by, target: ActionView::RecordIdentifier.dom_id(card, :hand)
+      broadcast_hand_count(by)
+    else
+      broadcast_remove_to self, target: ActionView::RecordIdentifier.dom_id(card)
+    end
+    broadcast_deck_marker(deck)
+    identity = deck.face_down? ? "una carta" : card.name
+    log!("#{by} descarta #{identity} en #{deck.name}", kind: "deck")
+  end
+
   def broadcast_deck_marker(deck)
     broadcast_replace_to self, target: ActionView::RecordIdentifier.dom_id(deck),
       partial: "decks/deck_marker", locals: { deck: deck, game: self }

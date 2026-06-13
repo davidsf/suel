@@ -107,6 +107,18 @@
           <% end %>
         </div>
       </div>
+
+      <% if @all_decks.any? %>
+        <div class="hand-card-toolbar" data-game-table-target="handToolbar" hidden>
+          <span data-game-table-target="handCardName" class="muted"></span>
+          <select data-game-table-target="discardDeck">
+            <% @all_decks.each do |deck| %>
+              <option value="<%= deck.id %>"><%= deck.name %></option>
+            <% end %>
+          </select>
+          <button data-action="game-table#discardHandCard">Descartar</button>
+        </div>
+      <% end %>
     <% end %>
   </div>
 <% end %>

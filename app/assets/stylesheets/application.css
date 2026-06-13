@@ -202,5 +202,19 @@ svg.grid-overlay g[hidden] { display: none; }
   padding: 0.5rem 0.7rem;
 }
 .hand-tray .hand-cards { display: flex; gap: 0.4rem; overflow-x: auto; min-height: 40px; align-items: center; }
-.hand-tray .hand-card { position: relative; transform: none; cursor: grab; flex: none; }
+.hand-tray .hand-card { position: relative; transform: none; cursor: grab; flex: none; touch-action: none; }
 .game-table-has-tray .piece-toolbar, .game-table-has-tray .deck-toolbar { bottom: 8rem; }
+
+/* card clone that follows the cursor while dragging from the tray */
+.hand-card.drag-clone {
+  position: fixed; transform: translate(-50%, -50%); opacity: 0.85;
+  pointer-events: none; z-index: 100000;
+}
+
+.hand-card-toolbar {
+  position: fixed; bottom: 8rem; left: 50%; transform: translateX(-50%);
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  padding: 0.5rem 0.9rem; display: flex; gap: 0.5rem; align-items: center; z-index: 1001;
+}
+.hand-card-toolbar select, .hand-card-toolbar button { font: inherit; }

@@ -8,7 +8,8 @@ import { Turbo } from "@hotwired/turbo-rails"
 export default class extends Controller {
   static values = { playable: Boolean, snapUrl: String, map: Number }
   static targets = ["toolbar", "pieceName", "flipButton", "rotateLeft", "rotateRight", "layerButtons",
-                    "deckToolbar", "deckName", "drawButton", "reshuffleButton"]
+                    "deckToolbar", "deckName", "drawButton", "reshuffleButton",
+                    "handToolbar", "handCardName", "discardDeck"]
 
   connect() {
     this.selectedId = null
@@ -159,6 +160,94 @@ export default class extends Controller {
     const world = this.element.querySelector(".world")
     const matrix = new DOMMatrix(getComputedStyle(world).transform)
     return matrix.a || 1
+  }
+
+  // Screen (viewport-page) coords → world (map) coords through the inverse of
+  // the world transform. Returns null when the point is outside the viewer.
+  screenToWorld(clientX, clientY) {
+    const rect = this.viewport.getBoundingClientRect()
+    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null
+    const world = this.element.querySelector(".world")
+    const point = new DOMPoint(clientX - rect.left, clientY - rect.top)
+    const local = point.matrixTransform(new DOMMatrix(getComputedStyle(world).transform).inverse())
+    return { x: Math.round(local.x), y: Math.round(local.y) }
+  }
+
+  // --- hand cards -----------------------------------------------------------
+
+  // Drag a card from the tray onto the board to play it; a tiny move selects
+  // it instead (showing the discard toolbar).
+  handCardDown(event) {
+    event.stopPropagation()
+    event.preventDefault()
+    const card = event.currentTarget
+    card.setPointerCapture(event.pointerId)
+
+    const drag = { startX: event.clientX, startY: event.clientY, moved: false, clone: null }
+
+    const onMove = (e) => {
+      if (Math.abs(e.clientX - drag.startX) + Math.abs(e.clientY - drag.startY) > 4) drag.moved = true
+      if (!drag.moved) return
+      if (!drag.clone) {
+        drag.clone = card.cloneNode(true)
+        drag.clone.classList.add("drag-clone")
+        document.body.appendChild(drag.clone)
+        card.style.opacity = "0.4"
+      }
+      drag.clone.style.left = `${e.clientX}px`
+      drag.clone.style.top = `${e.clientY}px`
+      const world = this.screenToWorld(e.clientX, e.clientY)
+      if (world) this.previewGhostAt(world); else this.hideGhost()
+    }
+
+    const onUp = (e) => {
+      card.removeEventListener("pointermove", onMove)
+      card.removeEventListener("pointerup", onUp)
+      card.removeEventListener("pointercancel", onUp)
+      this.hideGhost()
+      drag.clone?.remove()
+      card.style.opacity = ""
+
+      if (drag.moved) {
+        const world = this.screenToWorld(e.clientX, e.clientY)
+        if (world) this.patch(card.dataset.playUrl, { map: this.mapValue, x: world.x, y: world.y })
+      } else {
+        this.selectHandCard(card)
+      }
+    }
+
+    card.addEventListener("pointermove", onMove)
+    card.addEventListener("pointerup", onUp)
+    card.addEventListener("pointercancel", onUp)
+  }
+
+  // Throttled snap ghost for a known world point (hand-card drag).
+  previewGhostAt(world) {
+    const now = performance.now()
+    if (now - (this.lastSnapAt || 0) < 80) return
+    this.lastSnapAt = now
+    const seq = (this.snapSeq = (this.snapSeq || 0) + 1)
+    fetch(`${this.snapUrlValue}?map=${this.mapValue}&x=${world.x}&y=${world.y}`,
+          { headers: { "Accept": "application/json" } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data && seq === this.snapSeq) this.showGhost(data) })
+      .catch(() => {})
+  }
+
+  selectHandCard(card) {
+    this.selectedHandCard = card
+    this.handCardNameTarget.textContent = card.dataset.name
+    this.handToolbarTarget.hidden = false
+  }
+
+  discardHandCard() {
+    const card = this.selectedHandCard
+    const deck = this.discardDeckTarget.value
+    if (card && deck) {
+      this.send(card.dataset.discardUrl, "PATCH", { deck })
+      this.handToolbarTarget.hidden = true
+      this.selectedHandCard = null
+    }
   }
 
   // --- snap ghost ----------------------------------------------------------

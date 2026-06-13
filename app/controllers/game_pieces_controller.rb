@@ -1,4 +1,6 @@
 class GamePiecesController < ApplicationController
+  include ActionView::RecordIdentifier
+
   before_action :set_game_and_piece
   before_action :require_player
 
@@ -29,6 +31,34 @@ class GamePiecesController < ApplicationController
       render_piece
     else
       head :unprocessable_entity
+    end
+  end
+
+  # Play a card from the actor's hand onto a map.
+  def play
+    return head :forbidden unless @piece.hand_side == @player.side
+    game_map = GameMap.where(game_module_id: @game.game_module_id).find(params[:map])
+    return head :unprocessable_entity unless @piece.play_to!(game_map, params[:x].to_i, params[:y].to_i)
+
+    @game.after_card_played(@piece, by: @player.side)
+    # Actor: drop the card from the tray (the public append reaches them via cable).
+    render turbo_stream: turbo_stream.remove(dom_id(@piece, :hand))
+  end
+
+  # Send a card (from the actor's hand, or any map piece) to a deck.
+  def discard
+    return head :forbidden if @piece.in_hand? && @piece.hand_side != @player.side
+    deck = @game.deck_named_id(params[:deck]) or return head(:unprocessable_entity)
+
+    from_hand = @piece.in_hand?
+    on_map_id = @piece.on_map? ? dom_id(@piece) : nil
+    @piece.discard_to!(deck)
+    @game.after_card_discarded(@piece, deck:, by: @player.side, from_hand:)
+
+    if from_hand
+      render turbo_stream: turbo_stream.remove(dom_id(@piece, :hand))
+    else
+      render turbo_stream: turbo_stream.remove(on_map_id)
     end
   end
 
