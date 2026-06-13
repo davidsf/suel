@@ -17,7 +17,7 @@ class DeckMarkerTest < ApplicationSystemTestCase
 
     visit game_path(game)
     assert_selector ".deck-marker.actionable", minimum: 1
-    assert_selector ".hand-tray"
+    assert_selector ".hand-tray-open" # tray starts collapsed
 
     # Selecting a deck reveals the deck toolbar with its actions. The
     # draw/shuffle/reshuffle behaviour itself is covered deterministically by

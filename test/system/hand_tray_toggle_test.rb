@@ -15,15 +15,18 @@ class HandTrayToggleTest < ApplicationSystemTestCase
     sign_in users(:one)
     visit game_path(game)
 
+    # The tray starts collapsed; opening shows it, closing hides it again.
     # Fixed elements at the viewport edge are flaky for Selenium's native
     # click, so trigger the wiring directly; the feature itself is plain CSS.
-    assert_selector ".hand-tray", visible: true
-    page.execute_script('document.querySelector(".hand-tray-close").click()')
     assert_no_selector ".hand-tray", visible: true
     assert_selector ".hand-tray-open", visible: true
 
     page.execute_script('document.querySelector(".hand-tray-open").click()')
     assert_selector ".hand-tray", visible: true
     assert_no_selector ".hand-tray-open", visible: true
+
+    page.execute_script('document.querySelector(".hand-tray-close").click()')
+    assert_no_selector ".hand-tray", visible: true
+    assert_selector ".hand-tray-open", visible: true
   end
 end

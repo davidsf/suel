@@ -16,6 +16,8 @@ class PlayCardTest < ApplicationSystemTestCase
 
     sign_in users(:one)
     visit game_path(game)
+    # The tray starts collapsed; open it to reach the card.
+    page.execute_script('document.querySelector(".hand-tray-open").click()')
     assert_selector "#hand_tray .hand-card", count: 1
 
     page.execute_script(<<~JS)
