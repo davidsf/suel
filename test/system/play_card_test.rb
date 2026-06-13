@@ -1,6 +1,6 @@
 require "application_system_test_case"
 
-class PlayWiringTest < ApplicationSystemTestCase
+class PlayCardTest < ApplicationSystemTestCase
   include VmodTestHelper
 
   test "handCardDown drag plays the card via pointer events" do
@@ -14,11 +14,7 @@ class PlayWiringTest < ApplicationSystemTestCase
     card = game.game_pieces.where.not(deck_id: nil).first
     card.update!(deck_id: nil, deck_position: nil, hand_side: "Bando A")
 
-    visit new_session_path
-    fill_in "email_address", with: users(:one).email_address
-    fill_in "password", with: "password"
-    click_on "Sign in"
-    assert_text "Módulos"
+    sign_in users(:one)
     visit game_path(game)
     assert_selector "#hand_tray .hand-card", count: 1
 

@@ -10,7 +10,7 @@ export default class extends Controller {
   static targets = ["toolbar", "pieceName", "flipButton", "rotateLeft", "rotateRight", "layerButtons",
                     "deckToolbar", "deckName", "drawButton", "reshuffleButton",
                     "handToolbar", "handCardName", "discardDeck",
-                    "pieceDiscardDeck", "pieceDiscardButton"]
+                    "pieceDiscardDeck", "pieceDiscardButton", "handTray", "handOpen"]
 
   connect() {
     this.selectedId = null
@@ -233,6 +233,17 @@ export default class extends Controller {
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data && seq === this.snapSeq) this.showGhost(data) })
       .catch(() => {})
+  }
+
+  closeTray() {
+    this.handTrayTarget.hidden = true
+    this.handOpenTarget.hidden = false
+    if (this.hasHandToolbarTarget) this.handToolbarTarget.hidden = true
+  }
+
+  openTray() {
+    this.handTrayTarget.hidden = false
+    this.handOpenTarget.hidden = true
   }
 
   selectHandCard(card) {

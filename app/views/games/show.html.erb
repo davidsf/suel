@@ -109,6 +109,7 @@
       </div>
 
       <div class="hand-tray" data-game-table-target="handTray">
+        <button class="hand-tray-close" data-action="game-table#closeTray" title="Ocultar la mano">✕ Mano</button>
         <% if @hand_decks.any? %>
           <div class="hand-decks">
             <% @hand_decks.each do |deck| %>
@@ -122,6 +123,8 @@
           <% end %>
         </div>
       </div>
+      <button class="hand-tray-open" data-game-table-target="handOpen"
+              data-action="game-table#openTray" hidden>🂠 Mi mano</button>
 
       <% if @all_decks.any? %>
         <div class="hand-card-toolbar" data-game-table-target="handToolbar" hidden>

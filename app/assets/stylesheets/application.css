@@ -202,6 +202,16 @@ svg.grid-overlay g[hidden] { display: none; }
   padding: 0.5rem 0.7rem;
 }
 .hand-tray { display: flex; gap: 0.6rem; align-items: center; }
+.hand-tray-close {
+  font: inherit; font-size: 0.78rem; color: #f4f1ea;
+  background: transparent; border: 1px solid rgba(244, 241, 234, 0.4); border-radius: 5px;
+  padding: 0.1rem 0.5rem; cursor: pointer; align-self: flex-start;
+}
+.hand-tray-open {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1000;
+  font: inherit; background: var(--ink); color: #f4f1ea; border: none;
+  border-radius: 8px 8px 0 0; padding: 0.3rem 1rem; cursor: pointer;
+}
 .hand-tray .hand-decks { display: flex; gap: 0.4rem; }
 /* deck markers inside the tray sit in the flow, not absolutely on a board */
 .hand-tray .deck-marker { position: relative; left: auto !important; top: auto !important; transform: none; }

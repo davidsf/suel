@@ -14,11 +14,7 @@ class GameTableTest < ApplicationSystemTestCase
     game.copy_scenario_pieces!
     game.players.create!(user: users(:one), side: "Bando A")
 
-    visit new_session_path
-    fill_in "email_address", with: users(:one).email_address
-    fill_in "password", with: "password"
-    click_on "Sign in"
-    assert_text "Módulos"
+    sign_in users(:one)
 
     visit game_path(game)
     assert_selector ".game-log"
