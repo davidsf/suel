@@ -201,6 +201,10 @@ svg.grid-overlay g[hidden] { display: none; }
   background: rgba(43, 39, 34, 0.92); border-radius: 8px 8px 0 0;
   padding: 0.5rem 0.7rem;
 }
+.hand-tray { display: flex; gap: 0.6rem; align-items: center; }
+.hand-tray .hand-decks { display: flex; gap: 0.4rem; }
+/* deck markers inside the tray sit in the flow, not absolutely on a board */
+.hand-tray .deck-marker { position: relative; left: auto !important; top: auto !important; transform: none; }
 .hand-tray .hand-cards { display: flex; gap: 0.4rem; overflow-x: auto; min-height: 40px; align-items: center; }
 .hand-tray .hand-card { position: relative; transform: none; cursor: grab; flex: none; touch-action: none; }
 .game-table-has-tray .piece-toolbar, .game-table-has-tray .deck-toolbar { bottom: 8rem; }

@@ -55,7 +55,10 @@ class GamesController < ApplicationController
     @player = @game.player_for(Current.user)
 
     placed = @game.game_pieces.where.not(game_map_id: nil)
-    map_ids = placed.group(:game_map_id).order(count_all: :desc).count.keys
+    piece_map_ids = placed.group(:game_map_id).order(count_all: :desc).count.keys
+    # Also surface map-kind maps that only host decks (e.g. a "Cards" display)
+    deck_map_ids = @game_module.game_maps.kind_map.joins(:decks).distinct.pluck(:id)
+    map_ids = (piece_map_ids + (deck_map_ids - piece_map_ids))
     @maps = map_ids.filter_map { |map_id| GameMap.includes(:boards).find_by(id: map_id) }
     @game_map = @maps.find { |m| m.id == params[:map].to_i } || @maps.first
     @layout = @game_map ? @game.board_layout(@game_map).entries : []

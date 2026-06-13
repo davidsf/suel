@@ -9,7 +9,8 @@ export default class extends Controller {
   static values = { playable: Boolean, snapUrl: String, map: Number }
   static targets = ["toolbar", "pieceName", "flipButton", "rotateLeft", "rotateRight", "layerButtons",
                     "deckToolbar", "deckName", "drawButton", "reshuffleButton",
-                    "handToolbar", "handCardName", "discardDeck"]
+                    "handToolbar", "handCardName", "discardDeck",
+                    "pieceDiscardDeck", "pieceDiscardButton"]
 
   connect() {
     this.selectedId = null
@@ -400,6 +401,16 @@ export default class extends Controller {
   cycleLayer(index, delta = 1) {
     const piece = this.selectedPiece()
     if (piece) this.patch(piece.dataset.cycleLayerUrl, { index, delta })
+  }
+
+  discardPiece() {
+    const piece = this.selectedPiece()
+    const deck = this.hasPieceDiscardDeckTarget && this.pieceDiscardDeckTarget.value
+    if (piece && deck) {
+      this.send(piece.dataset.discardUrl, "PATCH", { deck })
+      this.toolbarTarget.hidden = true
+      this.selectedId = null
+    }
   }
 
   roll(event) {

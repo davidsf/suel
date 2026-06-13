@@ -90,6 +90,14 @@
       <button data-game-table-target="rotateLeft" data-action="game-table#rotateLeft">⟲</button>
       <button data-game-table-target="rotateRight" data-action="game-table#rotateRight">⟳</button>
       <span data-game-table-target="layerButtons"></span>
+      <% if @all_decks.any? %>
+        <select data-game-table-target="pieceDiscardDeck">
+          <% @all_decks.each do |deck| %>
+            <option value="<%= deck.id %>"><%= deck.name %></option>
+          <% end %>
+        </select>
+        <button data-game-table-target="pieceDiscardButton" data-action="game-table#discardPiece">Descartar</button>
+      <% end %>
     </div>
 
     <% if @player %>
@@ -101,6 +109,13 @@
       </div>
 
       <div class="hand-tray" data-game-table-target="handTray">
+        <% if @hand_decks.any? %>
+          <div class="hand-decks">
+            <% @hand_decks.each do |deck| %>
+              <%= render "decks/deck_marker", deck: deck, game: @game %>
+            <% end %>
+          </div>
+        <% end %>
         <div id="hand_tray" class="hand-cards">
           <% @hand_cards.each do |card| %>
             <%= render "game_pieces/hand_card", game_piece: card, game_module: @game_module %>

@@ -58,6 +58,19 @@ class CardPlayTest < ActionDispatch::IntegrationTest
     assert @card.reload.in_deck?
   end
 
+  test "a map piece can be discarded to a deck by any player" do
+    @game.players.create!(user: users(:two), side: "Bando B")
+    @card.play_to!(@map, 300, 200) # now on the map
+    discard = @game_module.decks.find_by(name: "Descartes")
+
+    sign_in_as users(:two) # not the original owner
+    assert_difference -> { @game.game_pieces.in_deck(discard).count }, 1 do
+      patch discard_game_piece_path(@game, @card), params: { deck: discard.id }
+    end
+    assert_response :success
+    assert @card.reload.in_deck?
+  end
+
   test "another player's hand cards never reach my page" do
     # Bando B joins and views the table
     @game.players.create!(user: users(:two), side: "Bando B")

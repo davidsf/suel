@@ -35,6 +35,7 @@ module GamePiecesHelper
       flip_url: flip_game_piece_path(game, game_piece),
       rotate_url: rotate_game_piece_path(game, game_piece),
       cycle_layer_url: cycle_layer_game_piece_path(game, game_piece),
+      discard_url: discard_game_piece_path(game, game_piece),
       flippable: game_piece.traits.any? { |t| t["kind"] == "mask" && t["back_image"].present? },
       rotatable: game_piece.traits.any? { |t| t["kind"] == "rotate" },
       layers: layers.to_json
