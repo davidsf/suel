@@ -25,6 +25,15 @@ Rails.application.routes.draw do
         patch :flip
         patch :rotate
         patch :cycle_layer
+        patch :play
+        patch :discard
+      end
+    end
+    resources :decks, only: [] do
+      member do
+        post :draw
+        post :shuffle
+        post :reshuffle
       end
     end
   end

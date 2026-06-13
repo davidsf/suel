@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_140000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -111,9 +111,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120000) do
   create_table "game_pieces", force: :cascade do |t|
     t.integer "board_id"
     t.datetime "created_at", null: false
+    t.integer "deck_id"
+    t.integer "deck_position"
     t.integer "game_id", null: false
     t.integer "game_map_id"
     t.string "gpid"
+    t.string "hand_side"
     t.string "name"
     t.json "traits", default: []
     t.text "type_string"
@@ -122,7 +125,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120000) do
     t.integer "y"
     t.integer "z_order", default: 0, null: false
     t.index ["board_id"], name: "index_game_pieces_on_board_id"
+    t.index ["deck_id"], name: "index_game_pieces_on_deck_id"
+    t.index ["game_id", "deck_id"], name: "index_game_pieces_on_game_id_and_deck_id"
     t.index ["game_id", "game_map_id"], name: "index_game_pieces_on_game_id_and_game_map_id"
+    t.index ["game_id", "hand_side"], name: "index_game_pieces_on_game_id_and_hand_side"
     t.index ["game_id"], name: "index_game_pieces_on_game_id"
     t.index ["game_map_id"], name: "index_game_pieces_on_game_map_id"
   end
@@ -242,6 +248,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120000) do
   add_foreign_key "game_events", "users"
   add_foreign_key "game_maps", "game_modules"
   add_foreign_key "game_pieces", "boards"
+  add_foreign_key "game_pieces", "decks"
   add_foreign_key "game_pieces", "game_maps"
   add_foreign_key "game_pieces", "games"
   add_foreign_key "games", "game_modules"

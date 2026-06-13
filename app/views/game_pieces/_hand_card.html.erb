@@ -1,0 +1,11 @@
+<%# OWNER-ONLY HTML. Renders the card front (raw traits). Must only ever be
+    rendered into the [game, side] stream or the owning player's HTTP
+    response — never the public game stream. %>
+<div class="piece hand-card" id="<%= dom_id(game_piece, :hand) %>"
+     title="<%= game_piece.name %>"
+     data-piece-id="<%= game_piece.id %>"
+     data-play-url="<%= play_game_piece_path(game_piece.game_id, game_piece) %>"
+     data-name="<%= game_piece.name %>"
+     data-action="pointerdown->game-table#handCardDown">
+  <%= render "pieces/piece", traits: game_piece.traits, game_module: game_module %>
+</div>

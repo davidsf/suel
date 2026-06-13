@@ -22,6 +22,7 @@ class GamesController < ApplicationController
     Game.transaction do
       @game.save!
       @game.copy_scenario_pieces!
+      @game.materialize_decks!
       @game.players.create!(user: Current.user, side: side)
     end
     redirect_to @game, notice: "Partida creada."

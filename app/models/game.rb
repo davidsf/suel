@@ -26,25 +26,53 @@ class Game < ApplicationRecord
 
   # Copies the scenario's placed pieces as this game's mutable pieces.
   # Coordinates are copied verbatim: pieces sharing a point form a stack and
-  # the table fans them out client-side, VASSAL style.
+  # the table fans them out client-side, VASSAL style. Pieces sitting on a
+  # player_hand map become hand cards of that side instead of map pieces
+  # (otherwise a saved game would leak everyone's hand).
   def copy_scenario_pieces!
     now = Time.current
+    hand_sides = game_module.game_maps.kind_player_hand.pluck(:id, :side).to_h
     rows = scenario.scenario_pieces.where.not(game_map_id: nil).order(:z_order).map do |piece|
+      side = hand_sides[piece.game_map_id]
       {
         game_id: id,
-        game_map_id: piece.game_map_id,
-        board_id: piece.board_id,
         gpid: piece.gpid,
         name: piece.name,
-        x: piece.x.to_i,
-        y: piece.y.to_i,
         z_order: piece.z_order,
         type_string: piece.type_string,
         traits: piece.traits,
+        hand_side: side,
+        game_map_id: side ? nil : piece.game_map_id,
+        board_id: side ? nil : piece.board_id,
+        x: side ? nil : piece.x.to_i,
+        y: side ? nil : piece.y.to_i,
         created_at: now, updated_at: now
       }
     end
     rows.each_slice(COPY_BATCH_SIZE) { |slice| GamePiece.insert_all(slice) }
+  end
+
+  # Materializes each deck's defined cards as live in-deck game pieces, with a
+  # shuffled order unless the module marks the deck shuffle="Never".
+  def materialize_decks!
+    now = Time.current
+    game_module.decks.includes(:piece_definitions).each do |deck|
+      cards = deck.piece_definitions.to_a
+      order = deck.settings["shuffle"] == "Never" ? cards : cards.shuffle
+      rows = order.each_with_index.map do |card, position|
+        {
+          game_id: id, deck_id: deck.id, deck_position: position,
+          gpid: card.gpid, name: card.name,
+          type_string: card.type_string, traits: card.traits,
+          z_order: 0, created_at: now, updated_at: now
+        }
+      end
+      rows.each_slice(COPY_BATCH_SIZE) { |slice| GamePiece.insert_all(slice) }
+    end
+  end
+
+  def deck_card_counts
+    game_pieces.where.not(deck_id: nil).group(:deck_id).count
   end
 
   private

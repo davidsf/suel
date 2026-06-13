@@ -2,20 +2,46 @@ class GamePiece < ApplicationRecord
   belongs_to :game
   belongs_to :game_map, optional: true
   belongs_to :board, optional: true
+  belongs_to :deck, optional: true
 
-  after_update_commit :broadcast_replace
+  # A piece is in exactly one place: in a deck, in a player's hand, or on a map.
+  validate :one_location_at_most
+
+  after_update_commit :broadcast_changes
+
+  scope :on_map, -> { where.not(game_map_id: nil) }
+  scope :in_deck, ->(deck) { where(deck_id: deck).order(:deck_position) }
+  scope :in_hand, ->(side) { where(hand_side: side) }
+
+  def in_deck? = deck_id.present?
+  def in_hand? = hand_side.present?
+  def on_map? = game_map_id.present?
 
   # Last write wins; a dropped piece snaps to the grid of the layout board
   # under it (coordinates are map space; the grid is board-local) and comes to
   # the top of its map.
   def move_to!(x, y)
-    if (entry = layout_entry_at(x, y))
-      local_x, local_y = entry.board.snap_point(x - entry.x, y - entry.y)
-      x = local_x + entry.x
-      y = local_y + entry.y
-    end
-    top = game.game_pieces.where(game_map_id:).maximum(:z_order).to_i
-    update!(x:, y:, z_order: top + 1)
+    x, y = snap(x, y)
+    update!(x:, y:, z_order: next_z(game_map_id))
+  end
+
+  # Hand card → map (played face up). One update so the dispatcher fires once.
+  def play_to!(game_map, x, y)
+    return false unless in_hand?
+    entry = game.board_layout(game_map).entry_at(x, y)
+    board = entry&.board
+    x, y = snap(x, y, game_map:)
+    updated = clear_mask(traits)
+    update!(hand_side: nil, deck_id: nil, deck_position: nil,
+            game_map: game_map, board: board, x:, y:,
+            z_order: next_z(game_map.id), traits: updated)
+  end
+
+  # Map or hand card → on top of a deck's discard.
+  def discard_to!(deck)
+    top = game.game_pieces.in_deck(deck).minimum(:deck_position).to_i
+    update!(deck: deck, deck_position: top - 1,
+            hand_side: nil, game_map_id: nil, board_id: nil, x: nil, y: nil)
   end
 
   def layout_entry_at(x, y)
@@ -68,6 +94,24 @@ class GamePiece < ApplicationRecord
 
   private
 
+  def snap(x, y, game_map: self.game_map)
+    return [ x, y ] unless game_map
+    entry = game.board_layout(game_map).entry_at(x, y) or return [ x, y ]
+    local_x, local_y = entry.board.snap_point(x - entry.x, y - entry.y)
+    [ local_x + entry.x, local_y + entry.y ]
+  end
+
+  def next_z(map_id)
+    game.game_pieces.where(game_map_id: map_id).maximum(:z_order).to_i + 1
+  end
+
+  def clear_mask(source)
+    updated = source.deep_dup
+    mask = updated.find { |t| t["kind"] == "mask" }
+    mask["obscured_by"] = nil if mask
+    updated
+  end
+
   # JSON columns aren't dirty-tracked on in-place mutation: always deep_dup,
   # modify the copy, reassign.
   def update_trait(kind, index = 0)
@@ -79,9 +123,24 @@ class GamePiece < ApplicationRecord
     true
   end
 
-  def broadcast_replace
-    broadcast_replace_to game,
-      partial: "game_pieces/game_piece",
-      locals: { game_piece: self, game_module: game.game_module }
+  def one_location_at_most
+    places = [ deck_id, hand_side.presence, game_map_id ].compact
+    errors.add(:base, "a piece can be in only one place") if places.size > 1
+  end
+
+  # State-aware broadcasting. In-deck pieces are silent (deck markers carry the
+  # count); in-hand pieces replace only in their owner's side stream; on-map
+  # pieces replace publicly. Transitions are handled by the controllers/Game
+  # methods that emit the cross-stream append/remove explicitly.
+  def broadcast_changes
+    return if in_deck?
+
+    if in_hand?
+      broadcast_replace_to game, hand_side, target: ActionView::RecordIdentifier.dom_id(self, :hand),
+        partial: "game_pieces/hand_card", locals: { game_piece: self, game_module: game.game_module }
+    else
+      broadcast_replace_to game,
+        partial: "game_pieces/game_piece", locals: { game_piece: self, game_module: game.game_module }
+    end
   end
 end
