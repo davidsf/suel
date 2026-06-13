@@ -46,7 +46,7 @@ export default class extends Controller {
         this.collapseStacks()
         this.clearSelection()
         this.selectedId = null
-        if (this.hasToolbarTarget) this.toolbarTarget.hidden = true
+        this.hideActionToolbars()
       }
       this.viewport.addEventListener("pointerdown", this.onViewportDown)
       this.viewport.addEventListener("pointerup", this.onViewportUp)
@@ -249,7 +249,7 @@ export default class extends Controller {
   selectHandCard(card) {
     this.selectedHandCard = card
     this.handCardNameTarget.textContent = card.dataset.name
-    this.handToolbarTarget.hidden = false
+    this.positionToolbar(this.handToolbarTarget, card)
   }
 
   discardHandCard() {
@@ -332,9 +332,29 @@ export default class extends Controller {
 
   select(piece) {
     this.clearSelection()
+    if (this.hasDeckToolbarTarget) this.deckToolbarTarget.hidden = true
     this.selectedId = piece.id
     piece.classList.add("selected")
     this.showToolbar(piece)
+  }
+
+  hideActionToolbars() {
+    if (this.hasToolbarTarget) this.toolbarTarget.hidden = true
+    if (this.hasDeckToolbarTarget) this.deckToolbarTarget.hidden = true
+  }
+
+  // Places a fixed toolbar just below the element it acts on, clamped to the
+  // viewport (above the element if there's no room below).
+  positionToolbar(toolbarEl, anchorEl) {
+    toolbarEl.hidden = false
+    const r = anchorEl.getBoundingClientRect()
+    const tw = toolbarEl.offsetWidth, th = toolbarEl.offsetHeight
+    let left = r.left + r.width / 2 - tw / 2
+    left = Math.max(4, Math.min(left, window.innerWidth - tw - 4))
+    let top = r.bottom + 6
+    if (top + th > window.innerHeight - 4) top = Math.max(4, r.top - th - 6)
+    toolbarEl.style.left = `${left}px`
+    toolbarEl.style.top = `${top}px`
   }
 
   clearSelection() {
@@ -384,7 +404,7 @@ export default class extends Controller {
       this.layerButtonsTarget.appendChild(group)
     })
 
-    this.toolbarTarget.hidden = false
+    this.positionToolbar(this.toolbarTarget, piece)
   }
 
   flip() {
@@ -441,9 +461,11 @@ export default class extends Controller {
     this.deckNameTarget.textContent = `${marker.dataset.deckName} (${marker.dataset.count})`
     this.drawButtonTarget.hidden = !marker.dataset.drawUrl
     this.reshuffleButtonTarget.hidden = !marker.dataset.reshuffleUrl
-    this.deckToolbarTarget.hidden = false
-    // Selecting a deck dismisses the piece toolbar
+    // Selecting a deck dismisses the piece toolbar and clears piece selection
     if (this.hasToolbarTarget) this.toolbarTarget.hidden = true
+    this.clearSelection()
+    this.selectedId = null
+    this.positionToolbar(this.deckToolbarTarget, marker)
   }
 
   draw() { this.deckAction("drawUrl", "POST") }
