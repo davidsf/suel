@@ -75,7 +75,70 @@ class Game < ApplicationRecord
     game_pieces.where.not(deck_id: nil).group(:deck_id).count
   end
 
+  # Draws the top card of a deck into a side's hand. The single update! fires
+  # the piece dispatcher (appends the card to the side stream); we broadcast
+  # the public deck marker and the log event ourselves (no card identity).
+  def draw_card!(deck, side:)
+    card = nil
+    transaction do
+      card = game_pieces.in_deck(deck).lock.first or return nil
+      card.update!(deck_id: nil, deck_position: nil, hand_side: side)
+    end
+    broadcast_deck_marker(deck)
+    broadcast_hand_count(side)
+    log!("#{side} roba 1 carta de #{deck.name}", kind: "deck")
+    card
+  end
+
+  def shuffle_deck!(deck, by:)
+    reorder_deck!(deck)
+    broadcast_deck_marker(deck)
+    log!("#{by} baraja #{deck.name}", kind: "deck")
+  end
+
+  # Moves every card of the discard pile into its reshuffle target and shuffles.
+  def reshuffle_deck!(deck, by:)
+    target = deck_named(deck.settings["reshuffleTarget"]) or return false
+    game_pieces.in_deck(deck).update_all(deck_id: target.id)
+    reorder_deck!(target)
+    broadcast_deck_marker(deck)
+    broadcast_deck_marker(target)
+    log!("#{by} rebaraja #{deck.name} en #{target.name}", kind: "deck")
+    true
+  end
+
+  def deck_named(name)
+    game_module.decks.detect { |d| d.name == name }
+  end
+
+  def broadcast_deck_marker(deck)
+    broadcast_replace_to self, target: ActionView::RecordIdentifier.dom_id(deck),
+      partial: "decks/deck_marker", locals: { deck: deck, game: self }
+  end
+
+  def broadcast_hand_count(side)
+    broadcast_replace_to self, target: "hand_count_#{side.parameterize}",
+      partial: "games/hand_count", locals: { game: self, side: side }
+  end
+
+  def hand_card_count(side)
+    game_pieces.in_hand(side).count
+  end
+
+  def top_card(deck)
+    game_pieces.in_deck(deck).first
+  end
+
   private
+
+  def reorder_deck!(deck)
+    ids = game_pieces.in_deck(deck).pluck(:id).shuffle
+    ids.each_with_index { |id, position| game_pieces.where(id:).update_all(deck_position: position) }
+  end
+
+  def log!(body, kind:)
+    game_events.create!(kind: kind, body: body)
+  end
 
   def scenario_must_be_ready
     errors.add(:scenario, "no está listo") unless scenario&.ready?

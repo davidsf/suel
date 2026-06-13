@@ -1,0 +1,17 @@
+<%# Public deck marker: position, name, live count, and the top card (back if
+    the deck is face-down). Rendered into the world at deck.x/deck.y. %>
+<% count = game.game_pieces.in_deck(deck).count %>
+<% reshufflable = deck.settings["reshufflable"] == "true" %>
+<div class="deck-marker actionable" id="<%= dom_id(deck) %>"
+     style="left: <%= deck.x %>px; top: <%= deck.y %>px; width: <%= [ deck.width, 50 ].max %>px; height: <%= [ deck.height, 70 ].max %>px;"
+     data-action="pointerdown->game-table#deckDown"
+     data-deck-name="<%= deck.name %>"
+     data-count="<%= count %>"
+     data-draw-url="<%= count.positive? ? draw_game_deck_path(game, deck) : "" %>"
+     data-shuffle-url="<%= shuffle_game_deck_path(game, deck) %>"
+     data-reshuffle-url="<%= reshufflable ? reshuffle_game_deck_path(game, deck) : "" %>">
+  <% if (traits = deck_top_traits(game, deck)) %>
+    <%= render "pieces/piece", traits: traits, game_module: game.game_module %>
+  <% end %>
+  <span class="deck-label"><%= deck.name %> (<%= count %>)</span>
+</div>

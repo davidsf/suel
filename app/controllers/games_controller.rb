@@ -63,5 +63,13 @@ class GamesController < ApplicationController
     @pieces = @game_map ? placed.where(game_map_id: @game_map.id).order(:z_order) : GamePiece.none
     @dice_buttons = @game_module.dice_buttons
     @events = @game.game_events.order(:created_at).last(100)
+
+    # Decks shown on the current map (markers on hand maps live in the tray)
+    @decks = @game_map ? @game_map.decks.reject { |d| @game_map.kind_player_hand? } : []
+    @all_decks = @game_module.decks.to_a
+    if @player
+      @hand_cards = @game.game_pieces.in_hand(@player.side).order(:id)
+      @hand_decks = @game_module.game_maps.kind_player_hand.where(side: @player.side).flat_map(&:decks)
+    end
   end
 end

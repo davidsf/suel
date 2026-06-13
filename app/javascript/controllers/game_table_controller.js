@@ -7,7 +7,8 @@ import { Turbo } from "@hotwired/turbo-rails"
 // dragging a piece stop propagation so the board doesn't pan underneath.
 export default class extends Controller {
   static values = { playable: Boolean, snapUrl: String, map: Number }
-  static targets = ["toolbar", "pieceName", "flipButton", "rotateLeft", "rotateRight", "layerButtons"]
+  static targets = ["toolbar", "pieceName", "flipButton", "rotateLeft", "rotateRight", "layerButtons",
+                    "deckToolbar", "deckName", "drawButton", "reshuffleButton"]
 
   connect() {
     this.selectedId = null
@@ -319,19 +320,44 @@ export default class extends Controller {
     })
   }
 
+  // --- decks ----------------------------------------------------------------
+
+  deckDown(event) {
+    if (!this.playableValue) return
+    event.stopPropagation()
+    const marker = event.currentTarget
+    this.selectedDeck = marker
+    this.deckNameTarget.textContent = `${marker.dataset.deckName} (${marker.dataset.count})`
+    this.drawButtonTarget.hidden = !marker.dataset.drawUrl
+    this.reshuffleButtonTarget.hidden = !marker.dataset.reshuffleUrl
+    this.deckToolbarTarget.hidden = false
+    // Selecting a deck dismisses the piece toolbar
+    if (this.hasToolbarTarget) this.toolbarTarget.hidden = true
+  }
+
+  draw() { this.deckAction("drawUrl", "POST") }
+  shuffleDeck() { this.deckAction("shuffleUrl", "POST") }
+  reshuffleDeck() { this.deckAction("reshuffleUrl", "POST") }
+
+  deckAction(urlKey, method) {
+    const url = this.selectedDeck?.dataset[urlKey]
+    if (url) this.send(url, method)
+  }
+
   // --- server sync ---------------------------------------------------------
 
-  async patch(url, params) {
-    const body = new URLSearchParams(params)
+  patch(url, params) { return this.send(url, "PATCH", params) }
+
+  async send(url, method, params = {}) {
     const response = await fetch(url, {
-      method: "PATCH",
+      method,
       headers: {
         "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content,
         "Accept": "text/vnd.turbo-stream.html"
       },
-      body
+      body: new URLSearchParams(params)
     })
-    if (response.ok) {
+    if (response.ok && response.headers.get("content-type")?.includes("turbo-stream")) {
       Turbo.renderStreamMessage(await response.text())
     }
   }

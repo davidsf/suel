@@ -2,7 +2,7 @@ class GameEvent < ApplicationRecord
   belongs_to :game
   belongs_to :user, optional: true
 
-  enum :kind, { roll: "roll", chat: "chat" }, default: "roll", suffix: true
+  enum :kind, { roll: "roll", chat: "chat", deck: "deck" }, default: "roll", suffix: true
 
   validates :body, presence: true
 

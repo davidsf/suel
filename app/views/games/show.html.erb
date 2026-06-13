@@ -23,7 +23,8 @@
     <% end %>
     <span class="muted">
       <% @game.players.each do |player| %>
-        <%= player.side %>: <%= player.user.email_address.split("@").first %><%= " (tú)" if player == @player %> ·
+        <%= player.side %>: <%= player.user.email_address.split("@").first %><%= " (tú)" if player == @player %>
+        (<%= render "games/hand_count", game: @game, side: player.side %>) ·
       <% end %>
     </span>
     <% if @player.nil? %>
@@ -36,15 +37,22 @@
   <% end %>
 
   <div data-controller="game-table"
+       class="<%= "game-table-has-tray" if @player %>"
        data-game-table-playable-value="<%= @player.present? %>"
        data-game-table-snap-url-value="<%= snap_game_path(@game) %>"
        data-game-table-map-value="<%= @game_map.id %>">
     <%= turbo_stream_from @game %>
+    <%= turbo_stream_from @game, @player.side if @player %>
 
     <%= render layout: "boards/viewer",
           locals: { layout: @layout, game_module: @game_module, toolbar: } do %>
-      <% @pieces.each do |piece| %>
-        <%= render "game_pieces/game_piece", game_piece: piece, game_module: @game_module %>
+      <div id="<%= dom_id(@game_map, :pieces) %>">
+        <% @pieces.each do |piece| %>
+          <%= render "game_pieces/game_piece", game_piece: piece, game_module: @game_module %>
+        <% end %>
+      </div>
+      <% @decks.each do |deck| %>
+        <%= render "decks/deck_marker", deck: deck, game: @game %>
       <% end %>
     <% end %>
 
@@ -83,5 +91,22 @@
       <button data-game-table-target="rotateRight" data-action="game-table#rotateRight">⟳</button>
       <span data-game-table-target="layerButtons"></span>
     </div>
+
+    <% if @player %>
+      <div class="deck-toolbar" data-game-table-target="deckToolbar" hidden>
+        <span data-game-table-target="deckName" class="muted"></span>
+        <button data-game-table-target="drawButton" data-action="game-table#draw">Robar</button>
+        <button data-action="game-table#shuffleDeck">Barajar</button>
+        <button data-game-table-target="reshuffleButton" data-action="game-table#reshuffleDeck">Rebarajar</button>
+      </div>
+
+      <div class="hand-tray" data-game-table-target="handTray">
+        <div id="hand_tray" class="hand-cards">
+          <% @hand_cards.each do |card| %>
+            <%= render "game_pieces/hand_card", game_piece: card, game_module: @game_module %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
   </div>
 <% end %>
