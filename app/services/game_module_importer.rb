@@ -16,6 +16,11 @@ class GameModuleImporter
 
     reset_children
     import_attributes(tree, result)
+    # Index PredefinedSetups by their .vsav basename so loose save files get
+    # the module's own name and menu category instead of the filename.
+    @setups_by_file = result.predefined_setups.select(&:file)
+      .index_by { |s| File.basename(s.file) }
+    @empty_setup = result.predefined_setups.find(&:empty)
     import_prototypes(result)
     @maps_by_identifier = import_maps(result)
     import_palette(result)
@@ -169,7 +174,8 @@ class GameModuleImporter
     return if stacks.empty?
 
     scenario = @game_module.scenarios.create!(
-      name: "Despliegue del módulo", kind: "module_setup", status: "ready"
+      name: @empty_setup&.name.presence || "Despliegue del módulo",
+      kind: "module_setup", status: "ready"
     )
     now = Time.current
     rows = stacks.flat_map do |map_info, stack|
@@ -207,8 +213,10 @@ class GameModuleImporter
 
   def import_save_file(path)
     relative = Pathname(path).relative_path_from(@dir).to_s
+    setup = @setups_by_file[File.basename(path)]
     scenario = @game_module.scenarios.create!(
-      name: File.basename(path, ".vsav").tr("_", " "),
+      name: setup&.name.presence || File.basename(path, ".vsav").tr("_", " "),
+      category: setup && setup.menu_path.join(" › ").presence,
       kind: "vsav", source_filename: relative
     )
     save = Vassal::SaveFile.parse(File.read(path))

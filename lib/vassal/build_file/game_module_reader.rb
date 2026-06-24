@@ -30,8 +30,10 @@ module Vassal
         VASSAL.build.module.ToolbarMenu
       ].freeze
 
-      Result = Struct.new(:maps, :prototypes, :piece_slots, :sides, :chart_windows, :other_components, keyword_init: true)
+      Result = Struct.new(:maps, :prototypes, :piece_slots, :sides, :chart_windows,
+                          :predefined_setups, :other_components, keyword_init: true)
       ChartWindowInfo = Struct.new(:name, :charts, keyword_init: true)
+      SetupInfo = Struct.new(:name, :menu_path, :file, :empty, keyword_init: true)
       MapInfo = Struct.new(:class_name, :name, :kind, :side, :settings, :boards, :decks, :setup_stacks, keyword_init: true)
       BoardInfo = Struct.new(:name, :image, :reversible, :grid, :width, :height, keyword_init: true)
       DeckInfo = Struct.new(:name, :owning_board, :x, :y, :width, :height, :settings, :card_slots, keyword_init: true)
@@ -50,12 +52,14 @@ module Vassal
         @piece_slots = []
         @sides = []
         @chart_windows = []
+        @predefined_setups = []
         @other = Hash.new(0)
 
         walk(@root.children)
 
         Result.new(maps: @maps, prototypes: @prototypes, piece_slots: @piece_slots,
-                   sides: @sides, chart_windows: @chart_windows, other_components: @other)
+                   sides: @sides, chart_windows: @chart_windows,
+                   predefined_setups: @predefined_setups, other_components: @other)
       end
 
       private
@@ -78,6 +82,8 @@ module Vassal
             @sides = node.children_tagged("entry").map(&:text)
           elsif node.class_name == "VASSAL.build.module.ChartWindow"
             @chart_windows << read_chart_window(node)
+          elsif node.class_name == "VASSAL.build.module.PredefinedSetup"
+            collect_setups(node, [], @predefined_setups)
           elsif !IGNORED_CLASSES.include?(node.class_name)
             @other[node.class_name] += 1
           end
@@ -90,6 +96,21 @@ module Vassal
         charts = []
         collect_charts(node, [], charts)
         ChartWindowInfo.new(name: node["name"].presence || "Tablas", charts: charts)
+      end
+
+      # PredefinedSetups are named starting positions, organized in menus.
+      # A menu node groups children; a leaf points to a .vsav (or is an empty
+      # "new game" start when useFile is false).
+      def collect_setups(node, path, acc)
+        if node["isMenu"] == "true"
+          label = node["name"].presence
+          node.children_tagged("PredefinedSetup").each do |child|
+            collect_setups(child, label ? path + [ label ] : path, acc)
+          end
+        else
+          file = node["useFile"] == "true" ? node["file"].presence : nil
+          acc << SetupInfo.new(name: node["name"].presence, menu_path: path, file: file, empty: file.nil?)
+        end
       end
 
       def collect_charts(node, path, acc)

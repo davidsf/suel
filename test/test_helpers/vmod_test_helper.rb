@@ -41,8 +41,22 @@ module VmodTestHelper
       "moduledata" => %(<?xml version="1.0"?><data version="1"><name>Cartas</name><version>1.0</version><VassalVersion>3.7.0</VassalVersion></data>),
       "images/board.png" => "fake", "images/back.png" => "fake",
       "images/card1.png" => "fake", "images/card2.png" => "fake", "images/card3.png" => "fake",
-      "images/unit.png" => "fake", "images/crt.gif" => "fake", "images/terrain.gif" => "fake"
+      "images/unit.png" => "fake", "images/crt.gif" => "fake", "images/terrain.gif" => "fake",
+      "batalla.vsav" => card_vsav
     }
+  end
+
+  # A tiny obfuscated .vsav (empty command stream) referenced by a
+  # PredefinedSetup, so the importer can name the scenario after the setup.
+  def card_vsav
+    inner = StringIO.new
+    Zip::OutputStream.write_buffer(inner) do |zip|
+      zip.put_next_entry("savedGame")
+      zip.write Vassal::Obfuscation.obfuscate("begin_save\eend_save")
+      zip.put_next_entry("savedata")
+      zip.write "<?xml version='1.0'?><data><description>Batalla</description></data>"
+    end
+    inner.string
   end
 
   # A CardSlot/PieceSlot body: a mask trait wrapping a basic piece.
@@ -85,6 +99,9 @@ module VmodTestHelper
             <VASSAL.build.widget.Chart chartName="Terreno" fileName="terrain.gif"/>
           </VASSAL.build.widget.TabWidget>
         </VASSAL.build.module.ChartWindow>
+        <VASSAL.build.module.PredefinedSetup name="Escenarios" isMenu="true" useFile="true">
+          <VASSAL.build.module.PredefinedSetup name="Batalla del Río" isMenu="false" useFile="true" file="batalla.vsav"/>
+        </VASSAL.build.module.PredefinedSetup>
       </VASSAL.build.GameModule>
     XML
   end

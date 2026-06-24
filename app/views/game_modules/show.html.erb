@@ -43,27 +43,30 @@
 
   <h2>Escenarios</h2>
   <% if @scenarios.any? %>
-    <table class="listing">
-      <% @scenarios.each do |scenario| %>
-        <tr>
-          <td>
-            <% if scenario.ready? %>
-              <%= link_to scenario.name, game_module_scenario_path(@game_module, scenario) %>
-            <% else %>
-              <%= scenario.name %>
-            <% end %>
-          </td>
-          <td class="muted"><%= scenario.module_setup? ? "definido en el módulo" : scenario.source_filename %></td>
-          <td class="muted"><%= scenario.scenario_pieces.count %> fichas</td>
-          <td><span class="status-pill <%= scenario.status %>"><%= scenario.status %></span></td>
-          <td>
-            <% if scenario.ready? && authenticated? %>
-              <%= link_to "Crear partida", new_game_path(scenario_id: scenario.id) %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </table>
+    <% @scenarios.group_by { |s| s.category.presence }.each do |category, scenarios| %>
+      <% if category %><h3 class="muted"><%= category %></h3><% end %>
+      <table class="listing">
+        <% scenarios.each do |scenario| %>
+          <tr>
+            <td>
+              <% if scenario.ready? %>
+                <%= link_to scenario.name, game_module_scenario_path(@game_module, scenario) %>
+              <% else %>
+                <%= scenario.name %>
+              <% end %>
+            </td>
+            <td class="muted"><%= scenario.module_setup? ? "definido en el módulo" : scenario.source_filename %></td>
+            <td class="muted"><%= scenario.scenario_pieces.count %> fichas</td>
+            <td><span class="status-pill <%= scenario.status %>"><%= scenario.status %></span></td>
+            <td>
+              <% if scenario.ready? && authenticated? %>
+                <%= link_to "Crear partida", new_game_path(scenario_id: scenario.id) %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+    <% end %>
   <% else %>
     <p class="muted">El módulo no incluye escenarios.</p>
   <% end %>
