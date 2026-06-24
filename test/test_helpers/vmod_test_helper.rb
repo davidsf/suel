@@ -41,7 +41,7 @@ module VmodTestHelper
       "moduledata" => %(<?xml version="1.0"?><data version="1"><name>Cartas</name><version>1.0</version><VassalVersion>3.7.0</VassalVersion></data>),
       "images/board.png" => "fake", "images/back.png" => "fake",
       "images/card1.png" => "fake", "images/card2.png" => "fake", "images/card3.png" => "fake",
-      "images/unit.png" => "fake"
+      "images/unit.png" => "fake", "images/crt.gif" => "fake", "images/terrain.gif" => "fake"
     }
   end
 
@@ -79,6 +79,12 @@ module VmodTestHelper
           </VASSAL.build.module.map.BoardPicker>
           <VASSAL.build.module.map.DrawPile name="Robo A" owningBoard="Mano A" x="50" y="50" width="50" height="70" faceDown="Never"/>
         </VASSAL.build.module.PlayerHand>
+        <VASSAL.build.module.ChartWindow name="Tablas">
+          <VASSAL.build.widget.TabWidget>
+            <VASSAL.build.widget.Chart chartName="CRT" fileName="crt.gif"/>
+            <VASSAL.build.widget.Chart chartName="Terreno" fileName="terrain.gif"/>
+          </VASSAL.build.widget.TabWidget>
+        </VASSAL.build.module.ChartWindow>
       </VASSAL.build.GameModule>
     XML
   end

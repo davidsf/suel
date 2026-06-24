@@ -1,0 +1,25 @@
+<%# Reference charts (CRTs, terrain...) as a tabbed image gallery. Reused by
+    the module page and the in-game dialog. Locals: windows, game_module. %>
+<% windows.each_with_index do |window, w| %>
+  <section class="charts" data-controller="charts">
+    <% if windows.size > 1 %><h2><%= window["name"] %></h2><% end %>
+    <div class="charts-tabs">
+      <% (window["charts"] || []).each_with_index do |chart, i| %>
+        <button type="button" class="<%= "active" if i.zero? %>"
+                data-action="charts#select" data-charts-index-param="<%= i %>">
+          <%= chart["name"].presence || Array(chart["path"]).join(" · ").presence || "Tabla #{i + 1}" %>
+        </button>
+      <% end %>
+    </div>
+    <% (window["charts"] || []).each_with_index do |chart, i| %>
+      <div class="chart-panel" data-charts-target="panel" <%= "hidden" unless i.zero? %>>
+        <% if chart["image"].present? %>
+          <%= image_tag module_image_path(game_module, chart["image"]),
+                alt: chart["name"], loading: "lazy" %>
+        <% elsif chart["html"].present? %>
+          <div class="chart-html"><%= sanitize chart["html"] %></div>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+<% end %>

@@ -10,7 +10,7 @@ export default class extends Controller {
   static targets = ["toolbar", "pieceName", "flipButton", "rotateLeft", "rotateRight", "layerButtons",
                     "deckToolbar", "deckName", "drawButton", "reshuffleButton",
                     "handToolbar", "handCardName", "discardDeck",
-                    "pieceDiscardDeck", "pieceDiscardButton", "handTray", "handOpen"]
+                    "pieceDiscardDeck", "pieceDiscardButton", "handTray", "handOpen", "chartsDialog"]
 
   connect() {
     this.selectedId = null
@@ -449,6 +449,10 @@ export default class extends Controller {
       method: "POST",
       headers: { "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content }
     })
+  }
+
+  openCharts() {
+    if (this.hasChartsDialogTarget) this.chartsDialogTarget.showModal()
   }
 
   // --- decks ----------------------------------------------------------------

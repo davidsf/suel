@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   resources :game_modules, only: %i[index show], param: :slug do
     get "assets/*path", to: "module_assets#show", as: :asset, format: false
     get :palette, to: "palettes#show"
+    get :charts, to: "charts#show"
     resources :boards, only: :show
     resources :scenarios, only: :show
   end

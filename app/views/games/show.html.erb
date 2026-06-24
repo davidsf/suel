@@ -34,6 +34,9 @@
       <% end %>
       <% if @game.free_sides.empty? %><span class="muted">(espectador)</span><% end %>
     <% end %>
+    <% if @game_module.charts? %>
+      <button type="button" data-action="game-table#openCharts">Tablas</button>
+    <% end %>
   <% end %>
 
   <div data-controller="game-table"
@@ -138,6 +141,15 @@
           <button data-action="game-table#discardHandCard">Descartar</button>
         </div>
       <% end %>
+    <% end %>
+
+    <% if @game_module.charts? %>
+      <dialog class="charts-dialog" data-game-table-target="chartsDialog">
+        <form method="dialog"><button class="charts-close" value="cerrar">✕</button></form>
+        <turbo-frame id="charts_frame" src="<%= game_module_charts_path(@game_module, frame: 1) %>" loading="lazy">
+          <p class="muted">Cargando tablas…</p>
+        </turbo-frame>
+      </dialog>
     <% end %>
   </div>
 <% end %>

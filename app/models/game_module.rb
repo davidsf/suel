@@ -31,6 +31,9 @@ class GameModule < ApplicationRecord
 
   def extracted? = File.directory?(extracted_dir)
 
+  # Reference chart windows (CRTs, terrain charts...) parsed at import time.
+  def charts? = charts.present?
+
   # Dice buttons defined anywhere in the module (toolbar, folders, maps...),
   # derived at runtime from the persisted build_tree.
   def dice_buttons

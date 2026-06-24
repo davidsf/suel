@@ -30,7 +30,8 @@ module Vassal
         VASSAL.build.module.ToolbarMenu
       ].freeze
 
-      Result = Struct.new(:maps, :prototypes, :piece_slots, :sides, :other_components, keyword_init: true)
+      Result = Struct.new(:maps, :prototypes, :piece_slots, :sides, :chart_windows, :other_components, keyword_init: true)
+      ChartWindowInfo = Struct.new(:name, :charts, keyword_init: true)
       MapInfo = Struct.new(:class_name, :name, :kind, :side, :settings, :boards, :decks, :setup_stacks, keyword_init: true)
       BoardInfo = Struct.new(:name, :image, :reversible, :grid, :width, :height, keyword_init: true)
       DeckInfo = Struct.new(:name, :owning_board, :x, :y, :width, :height, :settings, :card_slots, keyword_init: true)
@@ -48,12 +49,13 @@ module Vassal
         @prototypes = {}
         @piece_slots = []
         @sides = []
+        @chart_windows = []
         @other = Hash.new(0)
 
         walk(@root.children)
 
         Result.new(maps: @maps, prototypes: @prototypes, piece_slots: @piece_slots,
-                   sides: @sides, other_components: @other)
+                   sides: @sides, chart_windows: @chart_windows, other_components: @other)
       end
 
       private
@@ -74,8 +76,33 @@ module Vassal
             collect_slots(node, [], @piece_slots)
           elsif node.class_name == "VASSAL.build.module.PlayerRoster"
             @sides = node.children_tagged("entry").map(&:text)
+          elsif node.class_name == "VASSAL.build.module.ChartWindow"
+            @chart_windows << read_chart_window(node)
           elsif !IGNORED_CLASSES.include?(node.class_name)
             @other[node.class_name] += 1
+          end
+        end
+      end
+
+      # A ChartWindow holds reference charts (CRTs, terrain effects...) nested
+      # in tab/panel widgets. Flatten the leaves, keeping the tab breadcrumb.
+      def read_chart_window(node)
+        charts = []
+        collect_charts(node, [], charts)
+        ChartWindowInfo.new(name: node["name"].presence || "Tablas", charts: charts)
+      end
+
+      def collect_charts(node, path, acc)
+        node.children.each do |child|
+          name = child["chartName"].presence || child["name"].presence
+          case child.tag
+          when "Chart"
+            acc << { "name" => name, "image" => child["fileName"].presence, "path" => path }.compact
+          when "HtmlChart"
+            acc << { "name" => name, "html" => child.text.presence, "path" => path }.compact
+          else # widget container (TabWidget, PanelWidget, BoxWidget...)
+            label = child["entryName"].presence || child["name"].presence
+            collect_charts(child, label ? path + [ label ] : path, acc)
           end
         end
       end

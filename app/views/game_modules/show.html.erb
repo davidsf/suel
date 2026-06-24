@@ -35,6 +35,12 @@
     <span class="muted">(<%= @game_module.piece_definitions.where(deck_id: nil).count %> fichas<% if @game_module.decks.any? %>, <%= @game_module.piece_definitions.where.not(deck_id: nil).count %> cartas en <%= @game_module.decks.count %> mazos<% end %>)</span>
   </p>
 
+  <% if @game_module.charts? %>
+    <h2>Tablas</h2>
+    <p><%= link_to "Tablas y ayudas", game_module_charts_path(@game_module) %>
+      <span class="muted">(<%= @game_module.charts.sum { |w| (w["charts"] || []).size } %> tablas)</span></p>
+  <% end %>
+
   <h2>Escenarios</h2>
   <% if @scenarios.any? %>
     <table class="listing">

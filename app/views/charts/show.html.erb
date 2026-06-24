@@ -1,0 +1,20 @@
+<% content_for :title, "Tablas — #{@game_module.name}" %>
+
+<% if params[:frame] %>
+  <%# Loaded inside the in-game dialog's Turbo Frame %>
+  <turbo-frame id="charts_frame">
+    <% if @windows.any? %>
+      <%= render "charts/charts", windows: @windows, game_module: @game_module %>
+    <% else %>
+      <p class="muted">Este módulo no incluye tablas de referencia.</p>
+    <% end %>
+  </turbo-frame>
+<% else %>
+  <p><%= link_to "← #{@game_module.name}", game_module_path(@game_module) %></p>
+  <h1>Tablas y ayudas</h1>
+  <% if @windows.any? %>
+    <%= render "charts/charts", windows: @windows, game_module: @game_module %>
+  <% else %>
+    <p class="muted">Este módulo no incluye tablas de referencia.</p>
+  <% end %>
+<% end %>

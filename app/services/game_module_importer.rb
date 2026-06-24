@@ -53,6 +53,7 @@ class GameModuleImporter
       version: @game_module.version.presence || tree["version"],
       vassal_version: @game_module.vassal_version.presence || tree["VassalVersion"]
     )
+    @game_module.update!(charts: result.chart_windows.map { |w| { "name" => w.name, "charts" => w.charts } })
     result.other_components.each do |class_name, count|
       warn "componente no soportado: #{class_name} (#{count})"
     end
