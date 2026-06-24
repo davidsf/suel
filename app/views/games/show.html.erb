@@ -59,12 +59,19 @@
       <% end %>
     <% end %>
 
-    <% if @player && @dice_buttons.any? %>
+    <% if @player && (@dice_buttons.any? || @special_dice.any?) %>
       <div class="dice-bar">
         <% @dice_buttons.each_with_index do |button, index| %>
           <button data-action="game-table#roll"
                   data-game-table-url-param="<%= game_rolls_path(@game, button: index) %>"
                   title="<%= button['n_dice'] %>d<%= button['n_sides'] %><%= "+#{button['plus']}" if button['plus'].positive? %>">
+            🎲 <%= button["label"] %>
+          </button>
+        <% end %>
+        <% @special_dice.each_with_index do |button, index| %>
+          <button data-action="game-table#roll"
+                  data-game-table-url-param="<%= game_rolls_path(@game, special: index) %>"
+                  title="<%= button['dice'].size %> dado(s) de imagen">
             🎲 <%= button["label"] %>
           </button>
         <% end %>

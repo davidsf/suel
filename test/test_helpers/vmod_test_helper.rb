@@ -102,6 +102,12 @@ module VmodTestHelper
         <VASSAL.build.module.PredefinedSetup name="Escenarios" isMenu="true" useFile="true">
           <VASSAL.build.module.PredefinedSetup name="Batalla del Río" isMenu="false" useFile="true" file="batalla.vsav"/>
         </VASSAL.build.module.PredefinedSetup>
+        <VASSAL.build.module.SpecialDiceButton name="Dado de combate" text="Combate">
+          <VASSAL.build.module.SpecialDie name="Combate">
+            <VASSAL.build.module.SpecialDieFace value="1" text="Fallo" icon="die-1.png"/>
+            <VASSAL.build.module.SpecialDieFace value="2" text="Impacto" icon="die-2.png"/>
+          </VASSAL.build.module.SpecialDie>
+        </VASSAL.build.module.SpecialDiceButton>
       </VASSAL.build.GameModule>
     XML
   end

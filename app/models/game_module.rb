@@ -50,6 +50,23 @@ class GameModule < ApplicationRecord
     end.uniq
   end
 
+  # Image-faced dice (SpecialDiceButton → SpecialDie → SpecialDieFace). Each
+  # button holds one or more dice; each die is a list of faces {value,text,icon}.
+  def special_dice
+    find_nodes(build_tree, "VASSAL.build.module.SpecialDiceButton").map do |node|
+      attrs = node["attributes"] || {}
+      dice = find_nodes(node, "VASSAL.build.module.SpecialDie").map do |die|
+        find_nodes(die, "VASSAL.build.module.SpecialDieFace").map do |face|
+          fa = face["attributes"] || {}
+          { "value" => fa["value"].to_i, "text" => fa["text"].presence, "icon" => fa["icon"].presence }
+        end
+      end.reject(&:empty?)
+      { "name" => attrs["name"].presence || attrs["text"].presence || "Dado",
+        "label" => attrs["text"].presence || attrs["name"].presence || "Dado",
+        "dice" => dice }
+    end.reject { |b| b["dice"].empty? }
+  end
+
   # Player sides from the module's PlayerRoster, derived at runtime from the
   # persisted build_tree (the importer doesn't store them separately). Modules
   # without a roster get two generic sides so games are always creatable.

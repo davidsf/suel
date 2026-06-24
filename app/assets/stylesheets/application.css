@@ -240,3 +240,7 @@ svg.grid-overlay g[hidden] { display: none; }
   float: right; font: inherit; cursor: pointer; border: none; background: transparent;
   font-size: 1.1rem; color: var(--muted);
 }
+
+/* image dice faces in the log */
+.dice-faces { display: inline-flex; gap: 0.2rem; vertical-align: middle; }
+.die-face { height: 1.6em; width: auto; vertical-align: middle; }

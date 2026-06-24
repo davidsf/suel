@@ -65,6 +65,7 @@ class GamesController < ApplicationController
 
     @pieces = @game_map ? placed.where(game_map_id: @game_map.id).order(:z_order) : GamePiece.none
     @dice_buttons = @game_module.dice_buttons
+    @special_dice = @game_module.special_dice
     @events = @game.game_events.order(:created_at).last(100)
 
     # Decks shown on the current map (markers on hand maps live in the tray)

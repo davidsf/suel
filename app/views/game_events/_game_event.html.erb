@@ -1,4 +1,15 @@
 <div class="log-entry">
   <span class="muted"><%= game_event.created_at.strftime("%H:%M") %></span>
   <%= game_event.body %>
+  <% faces = game_event.payload["faces"] if game_event.payload.is_a?(Hash) %>
+  <% if faces.present? %>
+    <span class="dice-faces">
+      <% faces.each do |face| %>
+        <% if face["icon"].present? %>
+          <%= image_tag module_image_path(game_event.game.game_module, face["icon"]),
+                alt: face["text"] || face["value"], class: "die-face" %>
+        <% end %>
+      <% end %>
+    </span>
+  <% end %>
 </div>

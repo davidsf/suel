@@ -28,6 +28,7 @@ module Vassal
         VASSAL.build.module.GlobalKeyCommand
         VASSAL.build.module.StartupGlobalKeyCommand
         VASSAL.build.module.ToolbarMenu
+        VASSAL.build.module.SpecialDiceButton
       ].freeze
 
       Result = Struct.new(:maps, :prototypes, :piece_slots, :sides, :chart_windows,
