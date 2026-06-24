@@ -2,8 +2,8 @@
 # check=error=true
 
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t webvassal .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name webvassal webvassal
+# docker build -t suel .
+# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name suel suel
 
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 
