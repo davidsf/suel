@@ -24,6 +24,10 @@ module Vassal
         VASSAL.build.module.gamepieceimage.GamePieceImageDefinitions
         VASSAL.build.module.font.FontOrganizer
         VASSAL.build.module.DiceButton
+        VASSAL.build.module.properties.GlobalProperties
+        VASSAL.build.module.GlobalKeyCommand
+        VASSAL.build.module.StartupGlobalKeyCommand
+        VASSAL.build.module.ToolbarMenu
       ].freeze
 
       Result = Struct.new(:maps, :prototypes, :piece_slots, :sides, :other_components, keyword_init: true)
