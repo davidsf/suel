@@ -66,7 +66,7 @@ group :test do
 end
 
 # Read VASSAL .vmod archives (ZIP format)
-gem "rubyzip", "~> 2.4"
+gem "rubyzip", "~> 3.4"
 
 # Image metadata and previews; requires the libvips system library, loaded lazily (see Vassal::Images)
 gem "ruby-vips", "~> 2.3", require: false
