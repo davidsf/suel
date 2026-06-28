@@ -107,6 +107,7 @@ export default class extends Controller {
 
   pieceDown(event) {
     if (!this.playableValue) return // spectators pan instead
+    if (event.button !== 0) return // right/middle click is handled by pieceContext
     event.stopPropagation()
     event.preventDefault()
 
@@ -304,6 +305,9 @@ export default class extends Controller {
   // First click on a collapsed stack expands it; clicking an expanded piece
   // selects it and brings it to the top of the stack; lone pieces just select.
   pieceClicked(piece) {
+    // A right-click / long-press just opened the menu via pieceContext; ignore
+    // the click that the same gesture delivers so it doesn't dismiss the menu.
+    if (Date.now() - (this.menuOpenedAt || 0) < 500) return
     if (this.toggleStack(piece)) return
 
     const stacked = (this.stacks().get(this.stackKey(piece)) || []).length > 1
@@ -463,6 +467,7 @@ export default class extends Controller {
   pieceContext(event) {
     if (!this.playableValue) return
     event.preventDefault()
+    this.menuOpenedAt = Date.now()
     this.openMenu(event.currentTarget)
   }
 

@@ -28,8 +28,14 @@ class PieceMenuTest < ApplicationSystemTestCase
     el = "game_piece_#{piece.id}"
     assert_selector "##{el}", visible: :all
 
-    # Right-click opens the menu (also reachable by tap on touch/desktop).
-    page.execute_script(%(document.getElementById("#{el}").dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }))))
+    # A real right-click fires pointerdown/up around the contextmenu event; the
+    # menu must open and stay open (not be dismissed by the same gesture).
+    page.execute_script(<<~JS)
+      const p = document.getElementById("#{el}")
+      p.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 2, pointerId: 3 }))
+      p.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }))
+      p.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, button: 2, pointerId: 3 }))
+    JS
 
     assert_selector ".piece-menu", visible: true
     within ".piece-menu" do
