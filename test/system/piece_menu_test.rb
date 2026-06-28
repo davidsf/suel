@@ -125,4 +125,41 @@ class PieceMenuTest < ApplicationSystemTestCase
     page.execute_script(tap)
     assert_selector ".piece-menu", visible: true
   end
+
+  test "a hit counter shows a stepper that updates the number on the piece" do
+    game_module = GameModule.new
+    game_module.package.attach(io: file_fixture("mini.vmod").open, filename: "mini.vmod", content_type: "application/zip")
+    game_module.save!
+    ModuleImportJob.perform_now(game_module)
+    game_module.reload
+    game = Game.create!(game_module:, scenario: game_module.scenarios.vsav.first,
+                        creator: users(:one), name: "Mesa")
+    game.copy_scenario_pieces!
+    game.players.create!(user: users(:one), side: "Bando A")
+    piece = game.game_pieces.on_map.first
+    skip "fixture has no on-map piece" unless piece
+    basic = piece.traits.find { |t| t["kind"] == "basic" }
+    piece.update!(traits: [ basic,
+      { "kind" => "dynamic_property", "name" => "c", "numeric" => true,
+        "min" => 0, "max" => 9, "wrap" => false, "label" => "Hit", "value" => "0" },
+      { "kind" => "label", "text" => "$c$", "vertical_pos" => "b", "horizontal_pos" => "l" } ].compact)
+
+    sign_in users(:one)
+    visit game_path(game)
+    el = "game_piece_#{piece.id}"
+    assert_selector "##{el}", visible: :all
+    # No counter shown at 0 hits.
+    assert_no_selector "##{el} .piece-label"
+
+    page.execute_script(%(document.getElementById("#{el}").dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }))))
+    assert_selector ".piece-menu .menu-row", text: "Hit", visible: :all
+
+    # "+" increments the property and the number appears on the piece.
+    page.execute_script(<<~JS)
+      [...document.querySelectorAll(".piece-menu .menu-stepper button")]
+        .find(b => b.title.includes("Hit") && b.textContent === "+").click()
+    JS
+    assert_selector "##{el} .piece-label", text: "1", visible: :all
+    assert_selector ".piece-menu .menu-stepper .menu-state", text: "1", visible: :all
+  end
 end

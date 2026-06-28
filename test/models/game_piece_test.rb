@@ -127,6 +127,25 @@ class GamePieceTest < ActiveSupport::TestCase
     assert_equal 3, piece.reload.traits.first["value"], "clamps at the top level"
   end
 
+  test "adjust_property! steps a numeric dynamic property within its range" do
+    piece = @game.game_pieces.create!(
+      name: "hits", x: 0, y: 0, game_map: @piece.game_map,
+      traits: [
+        { "kind" => "dynamic_property", "name" => "c", "numeric" => true,
+          "min" => 0, "max" => 9, "wrap" => false, "value" => "0" },
+        { "kind" => "basic", "image" => "b.png", "name" => "hits" }
+      ]
+    )
+    assert piece.adjust_property!(0, 1)
+    assert_equal "1", piece.reload.traits.first["value"]
+    assert piece.adjust_property!(0, -1)
+    assert_equal "0", piece.reload.traits.first["value"]
+    assert piece.adjust_property!(0, -1)
+    assert_equal "0", piece.reload.traits.first["value"], "clamps at the minimum"
+    9.times { piece.adjust_property!(0, 1) }
+    assert_equal "9", piece.reload.traits.first["value"], "clamps at the maximum"
+  end
+
   test "flip! toggles obscured_by when the piece has a mask" do
     piece = @game.game_pieces.detect { |p| p.traits.any? { |t| t["kind"] == "mask" } }
     if piece

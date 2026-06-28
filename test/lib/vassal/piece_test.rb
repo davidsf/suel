@@ -74,6 +74,20 @@ class Vassal::PieceTest < ActiveSupport::TestCase
     assert_equal false, layer["always_active"], "a truncated type is not always active (VASSAL's default)"
   end
 
+  test "parses a DynamicProperty (hit counter) with range and menu label" do
+    type = "PROP;c;true,0,9,false;+1 Hit:521\\,0:I\\,1,-1  Hit:45\\,0:I\\,-1"
+    prop = Vassal::Piece::TraitRegistry.parse(type, "3")
+
+    assert_equal "dynamic_property", prop["kind"]
+    assert_equal "c", prop["name"]
+    assert_equal true, prop["numeric"]
+    assert_equal 0, prop["min"]
+    assert_equal 9, prop["max"]
+    assert_equal false, prop["wrap"]
+    assert_equal "Hit", prop["label"], "menu label comes from the change command name"
+    assert_equal "3", prop["value"]
+  end
+
   test "never raises on garbage" do
     traits = Vassal::Piece.parse_traits("what;is;this\tgarbage", "x\ty")
     assert(traits.all? { |t| t["kind"] == "unknown" })

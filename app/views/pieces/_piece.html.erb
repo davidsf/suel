@@ -18,6 +18,6 @@
           alt: "", loading: "lazy", decoding: "async" %>
   <% end %>
   <% piece_labels(traits).each do |label| %>
-    <span class="piece-label"><%= label["text"] %></span>
+    <span class="piece-label" style="<%= piece_label_style(label) %>"><%= label["resolved"] %></span>
   <% end %>
 </span>

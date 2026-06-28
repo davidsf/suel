@@ -439,7 +439,36 @@ export default class extends Controller {
       }
     })
 
+    // Numeric dynamic properties (e.g. a hit counter) as − value + steppers.
+    JSON.parse(piece.dataset.properties || "[]").forEach((prop) => {
+      const row = document.createElement("div")
+      row.className = "menu-row"
+      const stepper = document.createElement("span")
+      stepper.className = "menu-stepper"
+      stepper.append(
+        this.propStepButton("−", `${prop.label}: -1`, prop.index, -1),
+        this.menuState(String(prop.value)),
+        this.propStepButton("+", `${prop.label}: +1`, prop.index, 1)
+      )
+      row.append(this.menuLabel(prop.label), stepper)
+      this.layerButtonsTarget.appendChild(row)
+    })
+
     this.positionToolbar(this.toolbarTarget, piece)
+  }
+
+  propStepButton(text, title, index, delta) {
+    const button = document.createElement("button")
+    button.type = "button"
+    button.textContent = text
+    button.title = title
+    button.addEventListener("click", () => this.adjustProperty(index, delta))
+    return button
+  }
+
+  adjustProperty(index, delta) {
+    const piece = this.selectedPiece()
+    if (piece) this.patch(piece.dataset.adjustPropertyUrl, { index, delta })
   }
 
   menuLabel(text) {

@@ -26,6 +26,7 @@ Rails.application.routes.draw do
         patch :flip
         patch :rotate
         patch :cycle_layer
+        patch :adjust_property
         patch :play
         patch :discard
       end

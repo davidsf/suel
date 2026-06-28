@@ -36,6 +36,14 @@ module GamePiecesHelper
         level: value.positive? ? value : 0,
         level_name: (value.positive? ? level_names[value - 1].presence : nil) }
     end
+    # Numeric dynamic properties (e.g. hit counters) become ± stepper rows;
+    # index is their position among dynamic_property traits (for adjust_property!).
+    properties = game_piece.traits.select { |t| t["kind"] == "dynamic_property" }
+      .each_with_index.filter_map do |trait, index|
+        next unless trait["numeric"]
+        { index:, label: trait["label"].presence || trait["name"],
+          value: trait["value"].to_i, min: trait["min"].to_i, max: trait["max"].to_i }
+      end
     {
       action: "pointerdown->game-table#pieceDown contextmenu->game-table#pieceContext",
       piece_id: game_piece.id,
@@ -43,10 +51,12 @@ module GamePiecesHelper
       flip_url: flip_game_piece_path(game, game_piece),
       rotate_url: rotate_game_piece_path(game, game_piece),
       cycle_layer_url: cycle_layer_game_piece_path(game, game_piece),
+      adjust_property_url: adjust_property_game_piece_path(game, game_piece),
       discard_url: discard_game_piece_path(game, game_piece),
       flippable: game_piece.traits.any? { |t| t["kind"] == "mask" && t["back_image"].present? },
       rotatable: game_piece.traits.any? { |t| t["kind"] == "rotate" },
-      layers: layers.to_json
+      layers: layers.to_json,
+      properties: properties.to_json
     }
   end
 end

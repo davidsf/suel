@@ -196,6 +196,31 @@ module Vassal
         { "kind" => "moved" }
       end
 
+      # DynamicProperty "PROP;" — a per-piece named property (e.g. hit count).
+      # Type: key ; "numeric,min,max,wrap" ; encoded change commands. State is
+      # the current value. The change commands give the menu label (e.g. "Hit").
+      def self.dynamic_property(type, state)
+        d = decoder(type)
+        name = d.next_token("")
+        info = SequenceEncoder::Decoder.new(d.next_token(""), ",")
+        numeric = info.next_token("false") == "true"
+        min = info.next_int(0)
+        max = info.next_int(0)
+        wrap = info.next_token("false") == "true"
+        label = command_label(d.next_token(""))
+        { "kind" => "dynamic_property", "name" => name, "numeric" => numeric,
+          "min" => min, "max" => max, "wrap" => wrap, "label" => label,
+          "value" => state.to_s }.compact
+      end
+
+      # Menu name of the first change command, stripped of +/- and digits:
+      # "+1 Hit:..." -> "Hit". Used to label the menu stepper.
+      def self.command_label(commands)
+        return nil if commands.blank?
+        menu = SequenceEncoder::Decoder.new(commands, ",").next_token("").split(":").first.to_s
+        menu.gsub(/[+\-\d]/, "").strip.presence
+      end
+
       PARSERS = {
         "piece;" => method(:basic),
         "emb2;" => method(:layer),
@@ -206,7 +231,8 @@ module Vassal
         "rotate;" => method(:rotate),
         "hide;" => method(:invisible),
         "prototype;" => method(:prototype),
-        "markmoved;" => method(:moved)
+        "markmoved;" => method(:moved),
+        "PROP;" => method(:dynamic_property)
       }.freeze
     end
   end

@@ -97,6 +97,23 @@ class GamePiece < ApplicationRecord
     end
   end
 
+  # Steps a numeric dynamic property (e.g. a hit counter) by delta, clamped to
+  # its [min, max] range (wrapping if the property wraps).
+  def adjust_property!(index, delta)
+    update_trait("dynamic_property", index) do |trait|
+      next unless trait["numeric"]
+      min = trait["min"].to_i
+      max = trait["max"].to_i
+      value = trait["value"].to_i + delta
+      value = if trait["wrap"] && max >= min
+        min + (value - min) % (max - min + 1)
+      else
+        value.clamp(min, max)
+      end
+      trait["value"] = value.to_s
+    end
+  end
+
   private
 
   def snap(x, y, game_map: self.game_map)

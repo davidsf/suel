@@ -34,6 +34,14 @@ class GamePiecesController < ApplicationController
     end
   end
 
+  def adjust_property
+    if @piece.adjust_property!(params[:index].to_i, params.fetch(:delta, 1).to_i)
+      render_piece
+    else
+      head :unprocessable_entity
+    end
+  end
+
   # Play a card from the actor's hand onto a map.
   def play
     return head :forbidden unless @piece.hand_side == @player.side
