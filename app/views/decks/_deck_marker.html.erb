@@ -6,6 +6,7 @@
      style="left: <%= deck.x %>px; top: <%= deck.y %>px; width: <%= [ deck.width, 50 ].max %>px; height: <%= [ deck.height, 70 ].max %>px;"
      data-action="pointerdown->game-table#deckDown"
      data-deck-name="<%= deck.name %>"
+     data-draw-mode="<%= deck.game_map.kind_player_hand? ? "hand" : "board" %>"
      data-count="<%= count %>"
      data-draw-url="<%= count.positive? ? draw_game_deck_path(game, deck) : "" %>"
      data-shuffle-url="<%= shuffle_game_deck_path(game, deck) %>"

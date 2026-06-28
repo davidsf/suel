@@ -90,6 +90,25 @@ class Game < ApplicationRecord
     card
   end
 
+  # Draws the top piece of a deck straight onto the table at (x, y), VASSAL
+  # style (drag a piece out of the cup). Revealed face up when the DrawPile is
+  # drawFaceUp. The deck→map transition is silent in the dispatcher (a replace
+  # to a not-yet-rendered node), so we append the piece to the public map
+  # container ourselves and refresh the deck marker.
+  def draw_to_map!(deck, by:, game_map:, x:, y:)
+    card = nil
+    transaction do
+      card = game_pieces.in_deck(deck).lock.first or return nil
+      card.place_on_map!(game_map, x, y, reveal: deck.draw_face_up?, by:)
+    end
+    broadcast_deck_marker(deck)
+    broadcast_append_to self, target: ActionView::RecordIdentifier.dom_id(game_map, :pieces),
+      partial: "game_pieces/game_piece", locals: { game_piece: card, game_module: game_module }
+    identity = deck.draw_face_up? ? card.name : "una ficha"
+    log!("#{by} roba #{identity} de #{deck.name}", kind: "deck")
+    card
+  end
+
   def shuffle_deck!(deck, by:)
     reorder_deck!(deck)
     broadcast_deck_marker(deck)

@@ -79,7 +79,7 @@ module VmodTestHelper
           <VASSAL.build.module.map.BoardPicker>
             <VASSAL.build.module.map.boardPicker.Board name="Tablero" image="board.png" width="800" height="600"/>
           </VASSAL.build.module.map.BoardPicker>
-          <VASSAL.build.module.map.DrawPile name="Mazo" owningBoard="Tablero" x="100" y="100" width="50" height="70" faceDown="Always" shuffle="Always">
+          <VASSAL.build.module.map.DrawPile name="Mazo" owningBoard="Tablero" x="100" y="100" width="50" height="70" faceDown="Always" drawFaceUp="true" shuffle="Always">
             #{cards}
           </VASSAL.build.module.map.DrawPile>
           <VASSAL.build.module.map.DrawPile name="Descartes" owningBoard="Tablero" x="200" y="100" width="50" height="70" faceDown="Never" reshufflable="true" reshuffleTarget="Mazo"/>

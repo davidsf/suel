@@ -146,6 +146,26 @@ class GamePieceTest < ActiveSupport::TestCase
     assert_equal "9", piece.reload.traits.first["value"], "clamps at the maximum"
   end
 
+  test "place_on_map! reveals or hides the mask depending on reveal" do
+    map = @piece.game_map
+    hidden = @game.game_pieces.create!(name: "chit", traits: [
+      { "kind" => "mask", "back_image" => "back.png", "obscured_by" => nil },
+      { "kind" => "basic", "image" => "u.png", "name" => "chit" }
+    ])
+    assert hidden.place_on_map!(map, 10, 20, reveal: false, by: "Bando A")
+    assert_equal "Bando A", hidden.reload.traits.find { |t| t["kind"] == "mask" }["obscured_by"],
+      "a face-down draw stays hidden to everyone"
+
+    shown = @game.game_pieces.create!(name: "chit2", traits: [
+      { "kind" => "mask", "back_image" => "back.png", "obscured_by" => "Bando A" },
+      { "kind" => "basic", "image" => "u.png", "name" => "chit2" }
+    ])
+    assert shown.place_on_map!(map, 10, 20, reveal: true)
+    assert_nil shown.reload.traits.find { |t| t["kind"] == "mask" }["obscured_by"],
+      "a face-up draw is revealed"
+    assert shown.on_map?
+  end
+
   test "flip! toggles obscured_by when the piece has a mask" do
     piece = @game.game_pieces.detect { |p| p.traits.any? { |t| t["kind"] == "mask" } }
     if piece

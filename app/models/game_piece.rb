@@ -28,10 +28,18 @@ class GamePiece < ApplicationRecord
   # Hand card → map (played face up). One update so the dispatcher fires once.
   def play_to!(game_map, x, y)
     return false unless in_hand?
+    place_on_map!(game_map, x, y, reveal: true)
+  end
+
+  # Places the piece on a map from wherever it is (hand or deck): snaps to the
+  # board grid and comes to the top. reveal clears the mask (face up); otherwise
+  # the mask is forced obscured (face down to everyone) when the piece can be
+  # masked. One update so the dispatcher fires once.
+  def place_on_map!(game_map, x, y, reveal:, by: nil)
     entry = game.board_layout(game_map).entry_at(x, y)
     board = entry&.board
     x, y = snap(x, y, game_map:)
-    updated = clear_mask(traits)
+    updated = reveal ? clear_mask(traits) : obscure_mask(traits, by)
     update!(hand_side: nil, deck_id: nil, deck_position: nil,
             game_map: game_map, board: board, x:, y:,
             z_order: next_z(game_map.id), traits: updated)
@@ -131,6 +139,15 @@ class GamePiece < ApplicationRecord
     updated = source.deep_dup
     mask = updated.find { |t| t["kind"] == "mask" }
     mask["obscured_by"] = nil if mask
+    updated
+  end
+
+  # Forces the mask obscured (hidden to everyone). A piece with no mask trait
+  # cannot be hidden, so it is returned unchanged (it shows its front).
+  def obscure_mask(source, by)
+    updated = source.deep_dup
+    mask = updated.find { |t| t["kind"] == "mask" }
+    mask["obscured_by"] = by if mask
     updated
   end
 

@@ -544,13 +544,64 @@ export default class extends Controller {
 
   // --- decks ----------------------------------------------------------------
 
+  // Hand decks (on a player-hand map) draw via the toolbar button into the
+  // tray. Board decks (cups) are drawn VASSAL-style: drag the top piece out
+  // onto the table; a plain click just selects (shows shuffle/reshuffle).
   deckDown(event) {
     if (!this.playableValue) return
+    if (event.button !== 0) return
     event.stopPropagation()
     const marker = event.currentTarget
+
+    const draggable = marker.dataset.drawMode !== "hand" && marker.dataset.drawUrl
+    if (!draggable) { this.selectDeck(marker); return }
+
+    // Stop the browser's native image drag (the marker shows the top piece);
+    // otherwise it cancels our pointer drag before the drop lands.
+    event.preventDefault()
+    try { marker.setPointerCapture(event.pointerId) } catch {}
+    const drag = { startX: event.clientX, startY: event.clientY, moved: false, clone: null }
+
+    const onMove = (e) => {
+      if (Math.abs(e.clientX - drag.startX) + Math.abs(e.clientY - drag.startY) > 4) drag.moved = true
+      if (!drag.moved) return
+      if (!drag.clone) {
+        drag.clone = marker.cloneNode(true)
+        drag.clone.classList.add("drag-clone")
+        drag.clone.querySelector(".deck-label")?.remove()
+        document.body.appendChild(drag.clone)
+      }
+      drag.clone.style.left = `${e.clientX}px`
+      drag.clone.style.top = `${e.clientY}px`
+      const world = this.screenToWorld(e.clientX, e.clientY)
+      if (world) this.previewGhostAt(world); else this.hideGhost()
+    }
+
+    const onUp = (e) => {
+      marker.removeEventListener("pointermove", onMove)
+      marker.removeEventListener("pointerup", onUp)
+      marker.removeEventListener("pointercancel", onUp)
+      this.hideGhost()
+      drag.clone?.remove()
+
+      if (drag.moved) {
+        const world = this.screenToWorld(e.clientX, e.clientY)
+        if (world) this.send(marker.dataset.drawUrl, "POST", { map: this.mapValue, x: world.x, y: world.y })
+      } else {
+        this.selectDeck(marker)
+      }
+    }
+
+    marker.addEventListener("pointermove", onMove)
+    marker.addEventListener("pointerup", onUp)
+    marker.addEventListener("pointercancel", onUp)
+  }
+
+  selectDeck(marker) {
     this.selectedDeck = marker
     this.deckNameTarget.textContent = `${marker.dataset.deckName} (${marker.dataset.count})`
-    this.drawButtonTarget.hidden = !marker.dataset.drawUrl
+    // "Robar" draws to the hand: only for hand decks (cups are drawn by dragging).
+    this.drawButtonTarget.hidden = marker.dataset.drawMode !== "hand" || !marker.dataset.drawUrl
     this.reshuffleButtonTarget.hidden = !marker.dataset.reshuffleUrl
     // Selecting a deck dismisses the piece toolbar and clears piece selection
     if (this.hasToolbarTarget) this.toolbarTarget.hidden = true

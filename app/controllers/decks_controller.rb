@@ -6,6 +6,18 @@ class DecksController < ApplicationController
   before_action :authorize_deck!
 
   def draw
+    # Dragged out of the deck onto the table (VASSAL style): place at the drop
+    # point. Broadcasts (deck marker + map append) update everyone, the actor
+    # included, so no turbo_stream response is needed.
+    if params[:x].present?
+      map = @game.game_module.game_maps.find(params[:map])
+      card = @game.draw_to_map!(@deck, by: @player.side, game_map: map,
+                                x: params[:x].to_i, y: params[:y].to_i)
+      return head :unprocessable_entity unless card
+      return head :no_content
+    end
+
+    # No coordinates: draw into the side's hand (hand-map decks / card games).
     card = @game.draw_card!(@deck, side: @player.side)
     return head :unprocessable_entity unless card
 

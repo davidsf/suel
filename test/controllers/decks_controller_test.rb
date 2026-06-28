@@ -37,6 +37,27 @@ class DecksControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/Diplomacia|Asalto|Refuerzo/, GameEvent.last.body, "draw must not reveal the card")
   end
 
+  test "a player draws by dragging a card onto the table" do
+    sign_in_as users(:one)
+    map = @game_module.game_maps.find_by(name: "Mesa")
+
+    assert_difference -> { @game.game_pieces.on_map.count }, 1 do
+      assert_no_difference -> { @game.game_pieces.in_hand("Bando A").count } do
+        assert_turbo_stream_broadcasts(@game) do
+          post draw_game_deck_path(@game, @deck), params: { map: map.id, x: 410, y: 305 }
+        end
+      end
+    end
+    assert_response :no_content
+    assert_equal 2, @game.game_pieces.in_deck(@deck).count
+
+    card = @game.game_pieces.on_map.detect { |p| %w[Diplomacia Asalto Refuerzo].include?(p.name) }
+    assert card, "the drawn card is on the table"
+    # Mazo is drawFaceUp: the chit is revealed (mask cleared) and named in the log.
+    assert_nil card.traits.find { |t| t["kind"] == "mask" }["obscured_by"]
+    assert_match(/Diplomacia|Asalto|Refuerzo/, GameEvent.last.body)
+  end
+
   test "spectators cannot draw" do
     sign_in_as users(:two)
     post draw_game_deck_path(@game, @deck)

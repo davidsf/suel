@@ -19,6 +19,7 @@ class ToolbarAnchorTest < ApplicationSystemTestCase
     page.execute_script(<<~JS)
       const m = [...document.querySelectorAll(".deck-marker.actionable")].find(d => d.dataset.drawUrl)
       m.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }))
+      m.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }))
     JS
     assert_selector ".deck-toolbar", visible: true
 
