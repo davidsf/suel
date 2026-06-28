@@ -4,10 +4,10 @@
   <div class="cards">
     <% @game_modules.each do |game_module| %>
       <div class="card">
-        <% board = game_module.game_maps.flat_map(&:boards).find { |b| b.image_filename.present? } %>
-        <% if board && game_module.ready? %>
+        <% cover = game_module.ready? ? module_cover_path(game_module) : nil %>
+        <% if cover %>
           <%= link_to game_module_path(game_module) do %>
-            <div class="thumb" style="background-image: url('<%= board_preview_path(board, game_module) %>')"></div>
+            <div class="thumb" style="background-image: url('<%= cover %>')"></div>
           <% end %>
         <% else %>
           <div class="thumb"></div>
