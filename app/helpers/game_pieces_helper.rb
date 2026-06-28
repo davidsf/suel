@@ -22,16 +22,19 @@ module GamePiecesHelper
     game = game_piece.game
     layers = game_piece.traits.filter_map do |trait|
       next unless trait["kind"] == "layer"
-      levels = (trait["images"] || []).size
-      # A 2-level always-active layer flips between two states (often
-      # transparent/marker), so ± buttons are redundant: it's a toggle.
-      toggle = levels <= 1 || (levels == 2 && trait["always_active"])
+      images = trait["images"] || []
+      # A layer with at most one meaningful (non-blank) image is an on/off
+      # marker (e.g. Moved, Recover): show it as a single toggle, not ± steps.
+      meaningful = images.count { |img| img.to_s.strip.present? }
+      toggle = meaningful <= 1
       value = trait["value"].to_i
-      active = value.positive?
+      shown = value.positive? && images[value - 1].to_s.strip.present?
       level_names = trait["level_names"] || []
-      { name: trait["name"].presence || "Capa", toggle:, active:,
-        level: active ? value : 0,
-        level_name: (active ? level_names[value - 1].presence : nil) }
+      { name: trait["name"].presence || "Capa",
+        toggle:,
+        active: toggle ? shown : value.positive?,
+        level: value.positive? ? value : 0,
+        level_name: (value.positive? ? level_names[value - 1].presence : nil) }
     end
     {
       action: "pointerdown->game-table#pieceDown contextmenu->game-table#pieceContext",

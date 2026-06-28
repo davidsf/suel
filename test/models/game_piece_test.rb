@@ -61,22 +61,37 @@ class GamePieceTest < ActiveSupport::TestCase
     assert_in_delta((before - step) % 360, after, 0.01)
   end
 
-  test "cycle_layer! wraps through levels and persists" do
-    piece = @game.game_pieces.detect { |p| p.traits.any? { |t| t["kind"] == "layer" && (t["images"] || []).size > 1 } }
-    skip "fixture has no multi-level layer piece" unless piece
-
-    trait = piece.traits.find { |t| t["kind"] == "layer" }
-    size = trait["images"].size
-    level = trait["value"].to_i.positive? ? trait["value"].to_i : 1
-
+  test "cycle_layer! wraps through the levels of an always-active layer" do
+    piece = @game.game_pieces.create!(
+      name: "phase", x: 0, y: 0, game_map: @piece.game_map,
+      traits: [
+        { "kind" => "layer", "name" => "Phase", "images" => [ "a.png", "b.png", "c.png" ],
+          "value" => 1, "always_active" => true },
+        { "kind" => "basic", "image" => "b.png", "name" => "phase" }
+      ]
+    )
     assert piece.cycle_layer!(0, 1)
-    after = piece.reload.traits.find { |t| t["kind"] == "layer" }["value"]
-    assert_equal ((level - 1 + 1) % size) + 1, after
-
-    # Going back down restores the previous level (steps can be regained)
+    assert_equal 2, piece.reload.traits.first["value"]
+    2.times { piece.cycle_layer!(0, 1) } # 2 -> 3 -> wrap to 1
+    assert_equal 1, piece.reload.traits.first["value"], "wraps from the top back to level 1"
     assert piece.cycle_layer!(0, -1)
-    restored = piece.reload.traits.find { |t| t["kind"] == "layer" }["value"]
-    assert_equal level, restored
+    assert_equal 3, piece.reload.traits.first["value"], "wraps below level 1 to the top"
+  end
+
+  test "blank+marker layers are on/off: a step shows the marker or hides it" do
+    piece = @game.game_pieces.create!(
+      name: "moved", x: 0, y: 0, game_map: @piece.game_map,
+      traits: [
+        { "kind" => "layer", "name" => "Moved", "images" => [ " ", "moved.png" ],
+          "value" => 1, "always_active" => false },
+        { "kind" => "basic", "image" => "b.png", "name" => "moved" }
+      ]
+    )
+    # value 1 is the blank image (marker not shown) → a step turns the marker on
+    assert piece.cycle_layer!(0, 1)
+    assert_equal 2, piece.reload.traits.first["value"], "shows the marker image"
+    assert piece.cycle_layer!(0, 1)
+    assert_equal(-1, piece.reload.traits.first["value"], "hides the marker again")
   end
 
   test "single-image layers toggle activation on and off" do
