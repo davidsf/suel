@@ -65,12 +65,14 @@ module Vassal
         property_name = d.next_token("")
         first_level = d.next_int(1)
         d.next_int(0) # version
-        always_active = d.next_boolean(true)
+        always_active = d.next_boolean(false)
         3.times { d.next_token("") } # activate/increase/decrease keystrokes
         d.next_token("") # description
         scale = d.next_double(1.0)
 
-        value = Integer(state, exception: false) || 1
+        # State is ";"-delimited (value;activationStatus...); only the leading
+        # int matters here. Positive = active at that level, negative = inactive.
+        value = SequenceEncoder::Decoder.new(state.to_s, ";").next_int(1)
         {
           "kind" => "layer", "name" => name,
           "images" => images, "level_names" => names,
@@ -98,7 +100,7 @@ module Vassal
           images << sub.next_token("")
           names << sub.next_token("")
         end
-        value = Integer(state, exception: false) || 1
+        value = SequenceEncoder::Decoder.new(state.to_s, ";").next_int(1)
         {
           "kind" => "layer",
           "images" => images, "level_names" => names,

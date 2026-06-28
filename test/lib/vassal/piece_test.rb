@@ -62,6 +62,18 @@ class Vassal::PieceTest < ActiveSupport::TestCase
     assert_includes layer["images"], "Armenian-Cat-HI-B.gif"
   end
 
+  test "an emb2 layer reads its value from the state and defaults to not-always-active (GBoH leader)" do
+    # A GBoH leader "Finished" marker: an old-format emb2 type that ends before
+    # the always-active field, and a ";"-terminated state token of "-1".
+    type = "emb2;Finished;0;F;;0;;;0;;Reset;;1;false;0;0;Finished-Nanda.gif;;true;Finished;;;false;;1"
+    layer = Vassal::Piece::TraitRegistry.parse(type, "-1;")
+
+    assert_equal "layer", layer["kind"]
+    assert_equal "Finished", layer["name"]
+    assert_equal(-1, layer["value"], "value is the leading ;-delimited int, not Integer of the whole token")
+    assert_equal false, layer["always_active"], "a truncated type is not always active (VASSAL's default)"
+  end
+
   test "never raises on garbage" do
     traits = Vassal::Piece.parse_traits("what;is;this\tgarbage", "x\ty")
     assert(traits.all? { |t| t["kind"] == "unknown" })
