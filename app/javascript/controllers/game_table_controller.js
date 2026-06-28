@@ -7,7 +7,7 @@ import { Turbo } from "@hotwired/turbo-rails"
 // dragging a piece stop propagation so the board doesn't pan underneath.
 export default class extends Controller {
   static values = { playable: Boolean, snapUrl: String, map: Number }
-  static targets = ["toolbar", "pieceName", "flipButton", "rotateLeft", "rotateRight", "layerButtons",
+  static targets = ["toolbar", "pieceName", "flipButton", "rotateRow", "rotateLeft", "rotateRight", "layerButtons",
                     "deckToolbar", "deckName", "drawButton", "reshuffleButton",
                     "handToolbar", "handCardName", "discardDeck",
                     "pieceDiscardDeck", "pieceDiscardButton", "handTray", "handOpen", "chartsDialog"]
@@ -111,7 +111,7 @@ export default class extends Controller {
     event.preventDefault()
 
     const piece = event.currentTarget
-    piece.setPointerCapture(event.pointerId)
+    try { piece.setPointerCapture(event.pointerId) } catch {}
 
     const scale = this.worldScale()
     const drag = {
@@ -307,7 +307,17 @@ export default class extends Controller {
     if (this.toggleStack(piece)) return
 
     const stacked = (this.stacks().get(this.stackKey(piece)) || []).length > 1
-    this.select(piece)
+
+    // A single click/tap just selects; a second one on the same piece within
+    // the threshold opens the action menu (double-click / double-tap).
+    const now = Date.now()
+    const doubled = this.lastTapId === piece.id && now - (this.lastTapAt || 0) < 350
+    this.lastTapId = piece.id
+    this.lastTapAt = now
+
+    if (doubled) this.openMenu(piece)
+    else this.select(piece)
+
     if (stacked) {
       this.patch(piece.dataset.moveUrl, {
         x: Math.round(parseFloat(piece.style.left)),
@@ -330,12 +340,20 @@ export default class extends Controller {
     return true
   }
 
+  // Highlight a piece without opening the action menu (single click/tap).
   select(piece) {
     this.clearSelection()
     if (this.hasDeckToolbarTarget) this.deckToolbarTarget.hidden = true
+    if (this.hasToolbarTarget) this.toolbarTarget.hidden = true
     this.selectedId = piece.id
     piece.classList.add("selected")
-    this.showToolbar(piece)
+  }
+
+  // Select and open the action menu (double click/tap, or right-click).
+  openMenu(piece) {
+    const el = document.getElementById(piece.id) || piece
+    this.select(el)
+    this.showToolbar(el)
   }
 
   hideActionToolbars() {
@@ -382,29 +400,70 @@ export default class extends Controller {
   showToolbar(piece) {
     this.pieceNameTarget.textContent = piece.title
     this.flipButtonTarget.hidden = piece.dataset.flippable !== "true"
-    const rotatable = piece.dataset.rotatable === "true"
-    this.rotateLeftTarget.hidden = !rotatable
-    this.rotateRightTarget.hidden = !rotatable
+    this.rotateRowTarget.hidden = piece.dataset.rotatable !== "true"
 
+    // One menu row per layer trait: on/off layers show ✓/— and toggle on
+    // click; multi-level layers show the current level (name or number) with
+    // ◀ ▶ steppers.
     this.layerButtonsTarget.replaceChildren()
     JSON.parse(piece.dataset.layers || "[]").forEach((layer, index) => {
-      const group = document.createElement("span")
-      group.className = "layer-group"
-
+      const label = layer.name
       if (layer.toggle) {
-        // On/off layer: a single toggle button
-        const toggle = this.layerButton(layer.name, `${layer.name}: alternar`, index, 1)
-        group.append(toggle)
+        const row = document.createElement("button")
+        row.type = "button"
+        row.className = "menu-row clickable"
+        row.title = `${label}: alternar`
+        row.append(this.menuLabel(label), this.menuState(layer.active ? "✓" : "—"))
+        row.addEventListener("click", () => this.cycleLayer(index, 1))
+        this.layerButtonsTarget.appendChild(row)
       } else {
-        group.append(
-          this.layerButton(`${layer.name} −`, `${layer.name}: nivel anterior`, index, -1),
-          this.layerButton(`${layer.name} +`, `${layer.name}: siguiente nivel`, index, 1)
+        const row = document.createElement("div")
+        row.className = "menu-row"
+        const stepper = document.createElement("span")
+        stepper.className = "menu-stepper"
+        const state = layer.active ? (layer.level_name || String(layer.level)) : "—"
+        stepper.append(
+          this.menuStepButton("◀", `${label}: nivel anterior`, index, -1),
+          this.menuState(state),
+          this.menuStepButton("▶", `${label}: siguiente nivel`, index, 1)
         )
+        row.append(this.menuLabel(label), stepper)
+        this.layerButtonsTarget.appendChild(row)
       }
-      this.layerButtonsTarget.appendChild(group)
     })
 
     this.positionToolbar(this.toolbarTarget, piece)
+  }
+
+  menuLabel(text) {
+    const span = document.createElement("span")
+    span.className = "menu-label"
+    span.textContent = text
+    return span
+  }
+
+  menuState(text) {
+    const span = document.createElement("span")
+    span.className = "menu-state"
+    span.textContent = text
+    return span
+  }
+
+  menuStepButton(text, title, index, delta) {
+    const button = document.createElement("button")
+    button.type = "button"
+    button.textContent = text
+    button.title = title
+    button.addEventListener("click", () => this.cycleLayer(index, delta))
+    return button
+  }
+
+  // Right-click on a piece opens the action menu directly (a single tap only
+  // selects; a double tap is the touch equivalent).
+  pieceContext(event) {
+    if (!this.playableValue) return
+    event.preventDefault()
+    this.openMenu(event.currentTarget)
   }
 
   flip() {
@@ -418,15 +477,6 @@ export default class extends Controller {
   rotate(direction) {
     const piece = this.selectedPiece()
     if (piece) this.patch(piece.dataset.rotateUrl, { direction })
-  }
-
-  layerButton(text, title, index, delta) {
-    const button = document.createElement("button")
-    button.type = "button"
-    button.textContent = text
-    button.title = title
-    button.addEventListener("click", () => this.cycleLayer(index, delta))
-    return button
   }
 
   cycleLayer(index, delta = 1) {

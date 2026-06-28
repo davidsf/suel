@@ -94,19 +94,26 @@
       <% end %>
     </details>
 
-    <div class="piece-toolbar" data-game-table-target="toolbar" hidden>
-      <span data-game-table-target="pieceName" class="muted"></span>
-      <button data-game-table-target="flipButton" data-action="game-table#flip">Voltear</button>
-      <button data-game-table-target="rotateLeft" data-action="game-table#rotateLeft">⟲</button>
-      <button data-game-table-target="rotateRight" data-action="game-table#rotateRight">⟳</button>
-      <span data-game-table-target="layerButtons"></span>
+    <div class="piece-toolbar piece-menu" data-game-table-target="toolbar" hidden>
+      <span data-game-table-target="pieceName" class="menu-title"></span>
+      <button class="menu-row clickable" data-game-table-target="flipButton" data-action="game-table#flip">Voltear</button>
+      <div class="menu-row" data-game-table-target="rotateRow">
+        <span class="menu-label">Girar</span>
+        <span class="menu-stepper">
+          <button data-game-table-target="rotateLeft" data-action="game-table#rotateLeft">⟲</button>
+          <button data-game-table-target="rotateRight" data-action="game-table#rotateRight">⟳</button>
+        </span>
+      </div>
+      <div data-game-table-target="layerButtons"></div>
       <% if @all_decks.any? %>
-        <select data-game-table-target="pieceDiscardDeck">
-          <% @all_decks.each do |deck| %>
-            <option value="<%= deck.id %>"><%= deck.name %></option>
-          <% end %>
-        </select>
-        <button data-game-table-target="pieceDiscardButton" data-action="game-table#discardPiece">Descartar</button>
+        <div class="menu-row">
+          <select data-game-table-target="pieceDiscardDeck">
+            <% @all_decks.each do |deck| %>
+              <option value="<%= deck.id %>"><%= deck.name %></option>
+            <% end %>
+          </select>
+          <button data-game-table-target="pieceDiscardButton" data-action="game-table#discardPiece">Descartar</button>
+        </div>
       <% end %>
     </div>
 

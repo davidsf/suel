@@ -26,10 +26,15 @@ module GamePiecesHelper
       # A 2-level always-active layer flips between two states (often
       # transparent/marker), so ± buttons are redundant: it's a toggle.
       toggle = levels <= 1 || (levels == 2 && trait["always_active"])
-      { name: trait["name"].presence || "Capa", toggle: }
+      value = trait["value"].to_i
+      active = value.positive?
+      level_names = trait["level_names"] || []
+      { name: trait["name"].presence || "Capa", toggle:, active:,
+        level: active ? value : 0,
+        level_name: (active ? level_names[value - 1].presence : nil) }
     end
     {
-      action: "pointerdown->game-table#pieceDown",
+      action: "pointerdown->game-table#pieceDown contextmenu->game-table#pieceContext",
       piece_id: game_piece.id,
       move_url: move_game_piece_path(game, game_piece),
       flip_url: flip_game_piece_path(game, game_piece),

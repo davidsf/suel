@@ -142,6 +142,18 @@ svg.grid-overlay g[hidden] { display: none; }
 .piece-toolbar button, .deck-toolbar button { font: inherit; padding: 0.15rem 0.6rem; }
 .piece-toolbar .layer-group { display: inline-flex; gap: 0.15rem; }
 
+/* Piece action menu: vertical, one row per action with its current state */
+.piece-menu { flex-direction: column; align-items: stretch; gap: 0.1rem;
+  padding: 0.35rem; min-width: 190px; max-height: 70vh; overflow: auto; }
+.piece-menu .menu-title { font-weight: 600; padding: 0.2rem 0.4rem 0.35rem; }
+.piece-menu .menu-row { display: flex; align-items: center; justify-content: space-between;
+  gap: 0.6rem; padding: 0.3rem 0.45rem; border-radius: 6px; }
+.piece-menu button.menu-row, .piece-menu .menu-row.clickable {
+  font: inherit; text-align: left; background: none; border: none; cursor: pointer; width: 100%; }
+.piece-menu .menu-row.clickable:hover { background: var(--bg); }
+.piece-menu .menu-stepper { display: inline-flex; gap: 0.25rem; align-items: center; }
+.piece-menu .menu-state { min-width: 2em; text-align: center; color: var(--muted); }
+
 /* ---- dice + game log ---- */
 .dice-bar {
   position: fixed; bottom: 1rem; right: 1rem; z-index: 1000;
