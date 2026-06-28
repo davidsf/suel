@@ -57,6 +57,10 @@ small, .muted { color: var(--muted); }
 .card .body { padding: 0.6rem 0.8rem; }
 .card .body a { font-weight: 600; text-decoration: none; }
 .card .meta { font-size: 0.82rem; color: var(--muted); }
+a.card { color: inherit; text-decoration: none; cursor: pointer; }
+a.card .body { font-weight: 600; }
+a.card .meta { font-weight: normal; }
+a.card:hover { border-color: var(--muted); }
 
 .status-pill { display: inline-block; padding: 0 0.5rem; border-radius: 999px; font-size: 0.78rem; border: 1px solid var(--border); background: #eee; }
 .status-pill.ready { background: #e3efdd; border-color: #b9d3ac; }
@@ -236,6 +240,12 @@ svg.grid-overlay g[hidden] { display: none; }
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 .charts-dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+.scenario-dialog {
+  border: none; border-radius: 10px; padding: 1rem 1.2rem;
+  min-width: min(420px, 90vw); max-width: 90vw; max-height: 90vh; overflow: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+.scenario-dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
 .charts-close {
   float: right; font: inherit; cursor: pointer; border: none; background: transparent;
   font-size: 1.1rem; color: var(--muted);

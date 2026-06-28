@@ -205,10 +205,21 @@ class GameModuleImporter
     game_map && game_map.boards.one? ? game_map.boards.first : nil
   end
 
+  # Import the module's saved scenarios. When the buildFile registers
+  # PredefinedSetups (what VASSAL exposes in its "New game" menu), import only
+  # the .vsav files they reference — modules sometimes ship leftover save files
+  # that would otherwise show up as spurious duplicates. With no PredefinedSetup
+  # at all, fall back to importing every loose .vsav.
   def import_save_files
-    Dir.glob(@dir.join("**", "*.vsav")).sort.each do |path|
-      import_save_file(path)
+    paths = Dir.glob(@dir.join("**", "*.vsav")).sort
+    if @setups_by_file.any?
+      wanted = @setups_by_file.keys.to_set
+      (wanted - paths.map { |p| File.basename(p) }).each do |file|
+        warn "escenario referenciado sin fichero: #{file}"
+      end
+      paths = paths.select { |path| wanted.include?(File.basename(path)) }
     end
+    paths.each { |path| import_save_file(path) }
   end
 
   def import_save_file(path)

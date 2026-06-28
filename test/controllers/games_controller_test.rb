@@ -21,6 +21,15 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
   end
 
+  test "index shows a module card linking to its scenario picker frame" do
+    sign_in_as users(:one)
+    get games_path
+    assert_response :success
+    assert_select "a.card[href=?][data-turbo-frame=?]",
+      game_module_scenarios_path(@game_module), "scenario-picker"
+    assert_select "turbo-frame#scenario-picker"
+  end
+
   test "create makes the game, copies pieces and seats the creator" do
     sign_in_as users(:one)
     assert_difference [ "Game.count", "Player.count" ], 1 do

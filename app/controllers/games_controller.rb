@@ -1,6 +1,8 @@
 class GamesController < ApplicationController
   def index
     @games = Game.includes(:game_module, :scenario, players: :user).order(created_at: :desc)
+    @modules = GameModule.ready.includes(game_maps: :boards).order(:name)
+      .select { |m| m.scenarios.ready.exists? }
   end
 
   def new

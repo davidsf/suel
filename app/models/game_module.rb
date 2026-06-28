@@ -67,6 +67,17 @@ class GameModule < ApplicationRecord
     end.reject { |b| b["dice"].empty? }
   end
 
+  # The module's box art / splash, derived at runtime from the persisted
+  # build_tree. VASSAL stores it as the Documentation AboutScreen's fileName,
+  # which is an image resource (resolved under images/). Returns a path relative
+  # to the extracted dir, or nil when the module declares no about screen.
+  def cover_image
+    node = find_nodes(build_tree, "VASSAL.build.module.documentation.AboutScreen").first
+    file = node&.dig("attributes", "fileName").to_s.delete_prefix("/")
+    return if file.blank?
+    file.start_with?("images/") ? file : "images/#{file}"
+  end
+
   # Player sides from the module's PlayerRoster, derived at runtime from the
   # persisted build_tree (the importer doesn't store them separately). Modules
   # without a roster get two generic sides so games are always creatable.

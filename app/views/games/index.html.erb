@@ -16,16 +16,30 @@
 <% end %>
 
 <h2>Crear partida</h2>
-<p class="muted">Elige un escenario de un módulo:</p>
-<table class="listing">
-  <% GameModule.ready.order(:name).each do |game_module| %>
-    <% game_module.scenarios.ready.each do |scenario| %>
-      <tr>
-        <td><%= game_module.name %></td>
-        <td><%= scenario.name %></td>
-        <td class="muted"><%= scenario.scenario_pieces.count %> fichas</td>
-        <td><%= link_to "Crear partida", new_game_path(scenario_id: scenario.id) %></td>
-      </tr>
-    <% end %>
-  <% end %>
-</table>
+<% if @modules.any? %>
+  <div data-controller="scenario-picker">
+    <p class="muted">Elige primero el juego y luego el escenario:</p>
+    <div class="cards">
+      <% @modules.each do |game_module| %>
+        <%= link_to game_module_scenarios_path(game_module), class: "card",
+              data: { turbo_frame: "scenario-picker" } do %>
+          <% cover = module_cover_path(game_module) %>
+          <div class="thumb"<%= " style=\"background-image: url('#{cover}')\"".html_safe if cover %>></div>
+          <div class="body">
+            <%= game_module.name || game_module.slug %>
+            <div class="meta"><%= game_module.scenarios.ready.size %> escenarios</div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+
+    <dialog class="scenario-dialog" data-scenario-picker-target="dialog"
+            data-action="click->scenario-picker#backdropClose">
+      <form method="dialog"><button class="charts-close" value="cerrar">✕</button></form>
+      <%= turbo_frame_tag "scenario-picker",
+            data: { action: "turbo:frame-load->scenario-picker#open" } %>
+    </dialog>
+  </div>
+<% else %>
+  <p class="muted">No hay módulos con escenarios listos todavía.</p>
+<% end %>

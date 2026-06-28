@@ -10,7 +10,7 @@ Rails.application.routes.draw do
     get :palette, to: "palettes#show"
     get :charts, to: "charts#show"
     resources :boards, only: :show
-    resources :scenarios, only: :show
+    resources :scenarios, only: %i[index show]
   end
 
   resources :games, only: %i[index new create show] do

@@ -1,6 +1,11 @@
 class ScenariosController < ApplicationController
   allow_unauthenticated_access
 
+  def index
+    @game_module = GameModule.find_by!(slug: params[:game_module_slug])
+    @scenarios = @game_module.scenarios.ready.order(:kind, :name)
+  end
+
   def show
     @game_module = GameModule.find_by!(slug: params[:game_module_slug])
     @scenario = @game_module.scenarios.find(params[:id])
