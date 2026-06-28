@@ -389,6 +389,9 @@ export default class extends Controller {
     const piece = document.getElementById(this.selectedId)
     if (piece) {
       piece.classList.add("selected")
+      // Rebuild an open menu from the piece's new state so chosen options
+      // (toggled markers, stepped levels) reflect live without reopening it.
+      if (this.hasToolbarTarget && !this.toolbarTarget.hidden) this.showToolbar(piece)
     } else {
       this.selectedId = null
       this.toolbarTarget.hidden = true

@@ -56,6 +56,42 @@ class PieceMenuTest < ApplicationSystemTestCase
     assert_no_selector ".piece-menu", visible: true
   end
 
+  test "the open menu reflects chosen options live, without reopening" do
+    game_module = GameModule.new
+    game_module.package.attach(io: file_fixture("mini.vmod").open, filename: "mini.vmod", content_type: "application/zip")
+    game_module.save!
+    ModuleImportJob.perform_now(game_module)
+    game_module.reload
+    game = Game.create!(game_module:, scenario: game_module.scenarios.vsav.first,
+                        creator: users(:one), name: "Mesa")
+    game.copy_scenario_pieces!
+    game.players.create!(user: users(:one), side: "Bando A")
+    piece = game.game_pieces.on_map.first
+    skip "fixture has no on-map piece" unless piece
+    # A single on/off marker, so the menu is short and the row is easy to click.
+    basic = piece.traits.find { |t| t["kind"] == "basic" }
+    piece.update!(traits: [ basic, { "kind" => "layer", "name" => "Moved",
+      "images" => [ " ", "moved.png" ], "value" => 1, "always_active" => false } ].compact)
+
+    sign_in users(:one)
+    visit game_path(game)
+    el = "game_piece_#{piece.id}"
+    assert_selector "##{el}", visible: :all
+    # Open the menu and toggle the marker via JS (the fixture piece can sit at
+    # the board edge, so the floating menu may render off-screen — assert on the
+    # DOM, not on viewport visibility).
+    page.execute_script(%(document.getElementById("#{el}").dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }))))
+
+    assert_selector ".piece-menu .menu-row", text: "Moved", visible: :all
+    assert_selector ".piece-menu .menu-state", text: "—", visible: :all   # marker off
+    page.execute_script(<<~JS)
+      [...document.querySelectorAll(".piece-menu button.menu-row.clickable")]
+        .find(b => b.textContent.includes("Moved")).click()
+    JS
+    # The open menu rebuilds from the piece's new state without reopening.
+    assert_selector ".piece-menu .menu-state", text: "✓", visible: :all
+  end
+
   test "a single tap only selects; a double tap opens the menu" do
     game_module = GameModule.new
     game_module.package.attach(io: file_fixture("mini.vmod").open, filename: "mini.vmod", content_type: "application/zip")
