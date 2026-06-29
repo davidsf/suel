@@ -178,6 +178,9 @@ class Game < ApplicationRecord
       broadcast_append_to self, target: ActionView::RecordIdentifier.dom_id(piece.game_map, :pieces),
         partial: "game_pieces/game_piece", locals: { game_piece: piece, game_module: game_module }
     end
+    cmd.removed.each do |piece|
+      broadcast_remove_to self, target: ActionView::RecordIdentifier.dom_id(piece)
+    end
     cmd.source_decks.uniq.each { |deck| broadcast_deck_marker(deck) }
     cmd.reports.each { |message| log!(message, kind: "chat") }
   end

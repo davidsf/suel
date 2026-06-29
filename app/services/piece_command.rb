@@ -11,7 +11,7 @@
 class PieceCommand
   MAX_DEPTH = 25
 
-  attr_reader :touched, :reports, :placed, :source_decks
+  attr_reader :touched, :reports, :placed, :source_decks, :removed
 
   def initialize(game, by:)
     @game = game
@@ -20,6 +20,7 @@ class PieceCommand
     @reports = []       # resolved ReportState messages, in order
     @placed = []        # pieces moved onto a map from elsewhere (deck/hand)
     @source_decks = []  # decks those pieces came from, for marker refresh
+    @removed = []       # pieces destroyed (Delete/Replace), for removal broadcast
   end
 
   # Fires keystroke at piece and returns the dispatcher (touched pieces +
@@ -38,6 +39,9 @@ class PieceCommand
       when "send_to"      then run_send_to(piece, trait, keystroke)
       when "global_key"   then run_global_key(trait, keystroke, depth)
       when "place_marker" then run_place_marker(piece, trait, keystroke)
+      when "replace"      then run_replace(piece, trait, keystroke)
+      when "delete"       then run_delete(piece, trait, keystroke)
+      when "clone"        then run_clone(piece, trait, keystroke)
       when "report"       then run_report(piece, trait, keystroke)
       end
     end
@@ -92,13 +96,54 @@ class PieceCommand
     return unless trait["key"] == keystroke && piece.on_map?
 
     definition = @game.game_module.piece_definition_for_spec(trait["spec"]) or return
-    marker = GamePiece.create_on_map!(
-      game: @game, game_map: piece.game_map, board: piece.board,
-      x: piece.x.to_i + trait["x_off"].to_i, y: piece.y.to_i + trait["y_off"].to_i,
-      definition: definition, gpid: trait["gpid"]
+    place(definition, on: piece, offset: trait)
+  end
+
+  # Replace: place the replacement piece at the original's location, then remove
+  # the original (PlaceMarker + Delete). "Change status to …" markers.
+  def run_replace(piece, trait, keystroke)
+    return unless trait["key"] == keystroke && piece.on_map?
+
+    definition = @game.game_module.piece_definition_for_spec(trait["spec"]) or return
+    place(definition, on: piece, offset: trait)
+    remove(piece)
+  end
+
+  # Delete: destroy the piece. The trait loop keeps iterating the now-destroyed
+  # in-memory record harmlessly; no later trait re-saves it.
+  def run_delete(piece, trait, keystroke)
+    return unless trait["key"] == keystroke
+
+    remove(piece)
+  end
+
+  # Clone: duplicate the piece on top of itself. A GamePiece responds to the same
+  # name/type_string/traits/gpid readers create_on_map! uses, so it is its own
+  # "definition".
+  def run_clone(piece, trait, keystroke)
+    return unless trait["key"] == keystroke && piece.on_map?
+
+    place(piece, on: piece, offset: nil)
+  end
+
+  # Instantiates a definition (palette slot or another piece) on top of the stack
+  # at on's location plus an optional {x_off,y_off}; tracks it as placed.
+  def place(definition, on:, offset:)
+    piece = GamePiece.create_on_map!(
+      game: @game, game_map: on.game_map, board: on.board,
+      x: on.x.to_i + offset.to_h["x_off"].to_i, y: on.y.to_i + offset.to_h["y_off"].to_i,
+      definition: definition, gpid: offset.to_h["gpid"] || definition.gpid
     )
-    touch(marker)
-    @placed << marker
+    touch(piece)
+    @placed << piece
+  end
+
+  def remove(piece)
+    return if @removed.include?(piece)
+
+    @touched.delete(piece.id)
+    piece.destroy!
+    @removed << piece
   end
 
   def run_report(piece, trait, keystroke)

@@ -53,6 +53,18 @@ class PieceCommandControllerTest < ActionDispatch::IntegrationTest
     assert_equal @cell, [ marker.x, marker.y ]
   end
 
+  test "a player removes a marker and it is deleted" do
+    sign_in_as users(:one)
+    marker = @game.game_pieces.create!(game_map: @map, board: @board, x: @cell[0], y: @cell[1],
+                                       z_order: 9, name: "Disrupted Marker", type_string: "x", traits: lifecycle_marker_traits)
+
+    assert_difference -> { @game.game_pieces.count }, -1 do
+      post command_game_piece_path(@game, marker), params: { command: "key:68,130" }
+    end
+    assert_response :success
+    assert_not GamePiece.exists?(marker.id)
+  end
+
   test "an unknown keystroke the piece does not expose is rejected" do
     sign_in_as users(:one)
     post command_game_piece_path(@game, @marker), params: { command: "named:Bogus" }

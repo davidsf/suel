@@ -338,7 +338,7 @@ module Vassal
       # is the id stamped on the new instance, not the source slot's gpid.
       def self.place_marker(type, state)
         d = decoder(type)
-        d.next_token("") # command (menu text; the firing TriggerAction carries it)
+        command = d.next_token("") # menu text (usually blank; a TriggerAction carries it)
         key = keystroke(d.next_token(""))
         spec = d.next_token("")
         d.next_token("") # marker text
@@ -348,9 +348,30 @@ module Vassal
         d.next_token("") # afterburner key
         d.next_token("") # description
         gpid = d.next_token("")
-        { "kind" => "place_marker", "key" => key, "spec" => spec.presence,
-          "x_off" => x_off, "y_off" => y_off, "match_rotation" => match_rotation,
-          "gpid" => gpid.presence }.compact
+        { "kind" => "place_marker", "command" => command.presence, "key" => key,
+          "spec" => spec.presence, "x_off" => x_off, "y_off" => y_off,
+          "match_rotation" => match_rotation, "gpid" => gpid.presence }.compact
+      end
+
+      # Replace "replace;" — extends PlaceMarker (same encoding): it places the
+      # replacement piece and removes the original. "Change status to X" markers.
+      def self.replace(type, state)
+        place_marker(type, state).merge("kind" => "replace")
+      end
+
+      # Delete "delete;" — destroys the piece on a key command.
+      # Layout: command ; key ; description.
+      def self.delete_trait(type, state)
+        d = decoder(type)
+        command = d.next_token("")
+        { "kind" => "delete", "command" => command.presence, "key" => keystroke(d.next_token("")) }.compact
+      end
+
+      # Clone "clone;" — duplicates the piece on a key command (same layout).
+      def self.clone_trait(type, state)
+        d = decoder(type)
+        command = d.next_token("")
+        { "kind" => "clone", "command" => command.presence, "key" => keystroke(d.next_token("")) }.compact
       end
 
       # ReportState "report;" — on a matching key, writes a message to the chat
@@ -393,6 +414,9 @@ module Vassal
         "globalkey;" => method(:global_key_command),
         "setprop;" => method(:set_global_property),
         "placemark;" => method(:place_marker),
+        "replace;" => method(:replace),
+        "delete;" => method(:delete_trait),
+        "clone;" => method(:clone_trait),
         "report;" => method(:report),
         "hideCmd;" => method(:restrict_commands)
       }.freeze

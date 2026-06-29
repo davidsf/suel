@@ -72,6 +72,24 @@ class Vassal::CommandTraitsTest < ActiveSupport::TestCase
     assert_equal "1474", t["gpid"], "the gpid stamped on the new instance"
   end
 
+  test "Delete and Clone capture their key command" do
+    del = parse("delete;;57358,0,Remove;Remove")
+    assert_equal "delete", del["kind"]
+    assert_equal "named:Remove", del["key"]
+
+    clone = parse("clone;;57357,0,Clone;Clone")
+    assert_equal "clone", clone["kind"]
+    assert_equal "named:Clone", clone["key"]
+  end
+
+  test "Replace parses like PlaceMarker but with its own kind" do
+    t = parse("replace;;57431,0,FullRetreat;VASSAL.build.module.PieceWindow:Markers/VASSAL.build.widget.TabWidget:Markers/VASSAL.build.widget.ListWidget:General/VASSAL.build.widget.PieceSlot:Full Retreat Marker;null;0;0;false;;Full Retreat;297;2;false;false;;1")
+    assert_equal "replace", t["kind"]
+    assert_equal "named:FullRetreat", t["key"]
+    assert_equal "VASSAL.build.widget.PieceSlot:Full Retreat Marker", t["spec"].split("/").last
+    assert_equal "297", t["gpid"]
+  end
+
   test "RestrictCommands captures its action and gating expression" do
     t = parse("hideCmd;No Reveal when GE Unknown Units Deck Empty;Disable;{$GEUnkUnitsDeckCount$==0};70\\,130")
     assert_equal "restrict_commands", t["kind"]

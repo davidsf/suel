@@ -84,6 +84,47 @@ class PieceCommandTest < ActiveSupport::TestCase
     assert_includes @cmd.reports.join, "marked"
   end
 
+  test "Remove deletes the marker and reports the removal" do
+    marker = @game.game_pieces.create!(game_map: @map, board: @board, x: @cell[0], y: @cell[1],
+                                       z_order: 9, name: "Disrupted Marker", type_string: "x", traits: lifecycle_marker_traits)
+
+    assert_difference -> { @game.game_pieces.count }, -1 do
+      @cmd = PieceCommand.run(marker, "key:68,130", by: "GE")
+    end
+    assert_not GamePiece.exists?(marker.id)
+    assert_equal [ marker.id ], @cmd.removed.map(&:id)
+    assert_includes @cmd.reports.join, "removed"
+  end
+
+  test "Clone duplicates the marker on its own hex" do
+    marker = @game.game_pieces.create!(game_map: @map, board: @board, x: @cell[0], y: @cell[1],
+                                       z_order: 9, name: "Disrupted Marker", type_string: "x", traits: lifecycle_marker_traits)
+
+    assert_difference -> { @game.game_pieces.count }, 1 do
+      @cmd = PieceCommand.run(marker, "key:67,130", by: "GE")
+    end
+    clone = @cmd.placed.sole
+    assert_equal "Disrupted Marker", clone.name
+    assert_equal @cell, [ clone.x, clone.y ]
+    assert clone.z_order > marker.z_order, "clone sits on top"
+    assert GamePiece.exists?(marker.id), "the original stays"
+  end
+
+  test "Replace swaps the marker for the replacement piece" do
+    marker = @game.game_pieces.create!(game_map: @map, board: @board, x: @cell[0], y: @cell[1],
+                                       z_order: 9, name: "Disrupted Marker", type_string: "x", traits: lifecycle_marker_traits)
+
+    assert_no_difference -> { @game.game_pieces.count } do
+      @cmd = PieceCommand.run(marker, "key:70,130", by: "GE")
+    end
+    assert_not GamePiece.exists?(marker.id), "the original is gone"
+    replacement = @game.game_pieces.find_by(name: "Status Marker")
+    assert replacement.on_map?
+    assert_equal @cell, [ replacement.x, replacement.y ]
+    assert_equal [ replacement.id ], @cmd.placed.map(&:id)
+    assert_equal [ marker.id ], @cmd.removed.map(&:id)
+  end
+
   test "PlaceMarker resolves the marker definition from its breadcrumb spec" do
     definition = @game_module.piece_definition_for_spec(STATUS_MARKER_SPEC)
     assert_equal "Status Marker", definition&.name

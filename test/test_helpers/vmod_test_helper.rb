@@ -145,6 +145,27 @@ module VmodTestHelper
     ]
   end
 
+  # A marker carrying VASSAL's lifecycle commands: Remove (Delete), Clone, and
+  # "Change status" (Replace into the Status Marker), each a TriggerAction firing
+  # a report then the lifecycle keystroke — mirroring Holland '44's markers.
+  def lifecycle_marker_traits
+    [
+      { "kind" => "trigger", "command" => "Remove", "key" => "key:68,130", "watch_keys" => [],
+        "action_keys" => [ "named:ReportRemoved", "named:Remove" ] },
+      { "kind" => "trigger", "command" => "Clone", "key" => "key:67,130", "watch_keys" => [],
+        "action_keys" => [ "named:ReportCloned", "named:Clone" ] },
+      { "kind" => "trigger", "command" => "Change status", "key" => "key:70,130", "watch_keys" => [],
+        "action_keys" => [ "named:ReportChange", "named:ChangeTo" ] },
+      { "kind" => "delete", "key" => "named:Remove" },
+      { "kind" => "clone", "key" => "named:Clone" },
+      { "kind" => "replace", "key" => "named:ChangeTo", "spec" => STATUS_MARKER_SPEC, "x_off" => 0, "y_off" => 0 },
+      { "kind" => "report", "keys" => [ "named:ReportRemoved" ], "format" => "$location$: $newPieceName$ removed" },
+      { "kind" => "report", "keys" => [ "named:ReportCloned" ], "format" => "$location$: $newPieceName$ cloned" },
+      { "kind" => "report", "keys" => [ "named:ReportChange" ], "format" => "$location$: $newPieceName$ changed" },
+      { "kind" => "basic", "image" => "board.png", "name" => "Disrupted Marker" }
+    ]
+  end
+
   # A CardSlot/PieceSlot body: a mask trait wrapping a basic piece.
   def card_slot_text(image, name, gpid)
     "+/null/obs;F;back.png;Flip;I;?;\tpiece;;;#{image};#{name}/null\tnull;0;0;#{gpid};0"

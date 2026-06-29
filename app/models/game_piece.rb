@@ -66,7 +66,7 @@ class GamePiece < ApplicationRecord
   # firing key through PieceCommand runs it.
   def menu_commands
     traits.filter_map do |trait|
-      next unless %w[trigger send_to global_key].include?(trait["kind"])
+      next unless %w[trigger send_to global_key place_marker replace delete clone].include?(trait["kind"])
       next if trait["command"].blank? || trait["key"].blank?
       { "label" => trait["command"], "key" => trait["key"] }
     end
