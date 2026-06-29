@@ -7,6 +7,16 @@ class GamePiece < ApplicationRecord
   # A piece is in exactly one place: in a deck, in a player's hand, or on a map.
   validate :one_location_at_most
 
+  # Instantiates a palette definition as a new piece on a map, on top of the
+  # stack at the given point — used by PlaceMarker to stamp a marker counter.
+  # The point is already in map space (snapped to the source piece).
+  def self.create_on_map!(game:, game_map:, board:, x:, y:, definition:, gpid: nil)
+    top = game.game_pieces.where(game_map_id: game_map.id).maximum(:z_order).to_i
+    create!(game: game, game_map: game_map, board: board, x: x, y: y, z_order: top + 1,
+            name: definition.name, type_string: definition.type_string,
+            gpid: gpid || definition.gpid, traits: definition.traits.deep_dup)
+  end
+
   after_update_commit :broadcast_changes
 
   scope :on_map, -> { where.not(game_map_id: nil) }
@@ -36,13 +46,60 @@ class GamePiece < ApplicationRecord
   # the mask is forced obscured (face down to everyone) when the piece can be
   # masked. One update so the dispatcher fires once.
   def place_on_map!(game_map, x, y, reveal:, by: nil)
+    relocate_to!(game_map, x, y, traits: reveal ? clear_mask(traits) : obscure_mask(traits, by))
+  end
+
+  # Moves the piece onto a map at a map-space point from wherever it is (deck,
+  # hand or another map): snaps to the board grid under it, comes to the top,
+  # and clears its non-map location. Mask state is preserved unless new traits
+  # are passed in. Used by SendToLocation and card play.
+  def relocate_to!(game_map, x, y, traits: self.traits)
     entry = game.board_layout(game_map).entry_at(x, y)
     board = entry&.board
     x, y = snap(x, y, game_map:)
-    updated = reveal ? clear_mask(traits) : obscure_mask(traits, by)
     update!(hand_side: nil, deck_id: nil, deck_position: nil,
-            game_map: game_map, board: board, x:, y:,
-            z_order: next_z(game_map.id), traits: updated)
+            game_map: game_map, board: board, x:, y:, z_order: next_z(game_map.id), traits:)
+  end
+
+  # Right-click menu commands the piece exposes (TriggerAction, SendToLocation
+  # or CounterGlobalKeyCommand traits with menu text). Each is {label, key};
+  # firing key through PieceCommand runs it.
+  def menu_commands
+    traits.filter_map do |trait|
+      next unless %w[trigger send_to global_key].include?(trait["kind"])
+      next if trait["command"].blank? || trait["key"].blank?
+      { "label" => trait["command"], "key" => trait["key"] }
+    end
+  end
+
+  # Menu commands currently available, dropping any a RestrictCommands trait
+  # hides while its expression holds. global_props are the game's properties,
+  # which restriction expressions may reference alongside the piece's own.
+  def available_commands(global_props = {})
+    commands = menu_commands
+    return commands if commands.empty?
+
+    restricted = restricted_command_keys(global_props)
+    restricted.empty? ? commands : commands.reject { |c| restricted.include?(c["key"]) }
+  end
+
+  # The piece's VASSAL properties (BasicPiece name, markers, dynamic property
+  # values) plus its current location — the namespace $property$ tokens in
+  # command traits resolve against, alongside the game's global properties.
+  def vassal_properties
+    props = {}
+    traits.each do |trait|
+      case trait["kind"]
+      when "basic"
+        props["pieceName"] = props["BasicName"] = trait["name"].to_s if trait["name"].present?
+        (trait["properties"] || {}).each { |k, v| props[k] = v.to_s }
+      when "marker" then (trait["properties"] || {}).each { |k, v| props[k] = v.to_s }
+      when "dynamic_property" then props[trait["name"]] = trait["value"].to_s
+      end
+    end
+    props["LocationName"] = props["location"] = location_name.to_s
+    props["newPieceName"] = props["oldPieceName"] = props["pieceName"]
+    props.compact
   end
 
   # Map or hand card → on top of a deck's discard.
@@ -160,6 +217,19 @@ class GamePiece < ApplicationRecord
     yield trait
     update!(traits: updated)
     true
+  end
+
+  # Keystrokes hidden by a RestrictCommands trait whose expression currently
+  # matches. Properties are evaluated only if a restriction exists (the piece's
+  # own plus the game's globals).
+  def restricted_command_keys(global_props)
+    restrictions = traits.select { |t| t["kind"] == "restrict_commands" }
+    return [] if restrictions.empty?
+
+    props = vassal_properties.merge(global_props)
+    restrictions.flat_map do |trait|
+      Vassal::PropertyExpression.match?(trait["property_match"], props) ? Array(trait["keys"]) : []
+    end
   end
 
   def one_location_at_most

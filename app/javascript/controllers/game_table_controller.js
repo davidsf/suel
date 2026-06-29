@@ -454,7 +454,28 @@ export default class extends Controller {
       this.layerButtonsTarget.appendChild(row)
     })
 
+    // VASSAL key commands (Reveal, Send to..., etc.) as clickable rows. The
+    // server runs the command and broadcasts every affected piece, so we just
+    // fire and let the menu close.
+    JSON.parse(piece.dataset.commands || "[]").forEach((command) => {
+      const row = document.createElement("button")
+      row.type = "button"
+      row.className = "menu-row clickable"
+      row.title = command.label
+      row.append(this.menuLabel(command.label))
+      row.addEventListener("click", () => this.runCommand(command.key))
+      this.layerButtonsTarget.appendChild(row)
+    })
+
     this.positionToolbar(this.toolbarTarget, piece)
+  }
+
+  runCommand(key) {
+    const piece = this.selectedPiece()
+    if (!piece) return
+    this.send(piece.dataset.commandUrl, "POST", { command: key })
+    this.hideActionToolbars()
+    this.selectedId = null
   }
 
   propStepButton(text, title, index, delta) {

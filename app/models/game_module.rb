@@ -88,6 +88,22 @@ class GameModule < ApplicationRecord
     entries.presence || [ "Bando A", "Bando B" ]
   end
 
+  # The marker PieceDefinition a PlaceMarker trait's spec points to. The spec is
+  # a "ClassName:Label" breadcrumb ending in the slot ("…PieceSlot:Disrupted
+  # Marker"); the intermediate widget labels match the slot's stored
+  # palette_path. A purely numeric spec is a bare gpid (some modules store it so).
+  def piece_definition_for_spec(spec)
+    spec = spec.to_s
+    return if spec.blank?
+    return piece_definitions.find_by(gpid: spec) if spec.match?(/\A\d+\z/)
+
+    labels = spec.split("/").map { |segment| segment.split(":", 2).last.to_s }
+    name = labels.last
+    path = labels[1..-2] || [] # drop the PieceWindow label and the leaf slot name
+    by_name = piece_definitions.where(name: name)
+    by_name.find { |definition| definition.palette_path == path } || by_name.first
+  end
+
   private
 
   # Depth-first search over the persisted build_tree json.

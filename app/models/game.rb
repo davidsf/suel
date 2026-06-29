@@ -130,6 +130,14 @@ class Game < ApplicationRecord
     game_module.decks.detect { |d| d.name == name }
   end
 
+  # Global properties read/written by the module's command traits
+  # (SetGlobalProperty). Stored as strings, VASSAL-style.
+  def property(name) = properties[name.to_s]
+
+  def set_property!(name, value)
+    update!(properties: properties.merge(name.to_s => value.to_s))
+  end
+
   def deck_named_id(id)
     game_module.decks.detect { |d| d.id == id.to_i }
   end
@@ -159,6 +167,19 @@ class Game < ApplicationRecord
     broadcast_deck_marker(deck)
     identity = deck.face_down? ? "una carta" : card.name
     log!("#{by} descarta #{identity} en #{deck.name}", kind: "deck")
+  end
+
+  # Broadcasts the side effects of a PieceCommand run. Pieces moved in place
+  # already broadcast their own replace; here we insert pieces newly placed on a
+  # map (their replace was a no-op for viewers), refresh decks that lost pieces,
+  # and write each ReportState message to the log.
+  def apply_command_result(cmd)
+    cmd.placed.each do |piece|
+      broadcast_append_to self, target: ActionView::RecordIdentifier.dom_id(piece.game_map, :pieces),
+        partial: "game_pieces/game_piece", locals: { game_piece: piece, game_module: game_module }
+    end
+    cmd.source_decks.uniq.each { |deck| broadcast_deck_marker(deck) }
+    cmd.reports.each { |message| log!(message, kind: "chat") }
   end
 
   def broadcast_deck_marker(deck)

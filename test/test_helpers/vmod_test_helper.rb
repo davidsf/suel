@@ -59,6 +59,92 @@ module VmodTestHelper
     inner.string
   end
 
+  # A module with a square-gridded map and an (empty) hidden-units deck, for
+  # exercising the command bus (reveal). Pieces are added by the test directly.
+  def create_reveal_module!
+    create_game_module!(
+      "buildFile.xml" => reveal_build_file,
+      "moduledata" => %(<?xml version="1.0"?><data version="1"><name>Reveal</name><version>1.0</version><VassalVersion>3.7.0</VassalVersion></data>),
+      "images/board.png" => "fake"
+    )
+  end
+
+  def reveal_build_file
+    <<~XML
+      <?xml version="1.0"?>
+      <VASSAL.build.GameModule name="Reveal" version="1.0" VassalVersion="3.7.0">
+        <VASSAL.build.module.PlayerRoster><entry>GE</entry><entry>AL</entry></VASSAL.build.module.PlayerRoster>
+        <VASSAL.build.module.Map mapName="Main Map">
+          <VASSAL.build.module.map.BoardPicker>
+            <VASSAL.build.module.map.boardPicker.Board name="Board1" image="board.png" width="600" height="400">
+              <VASSAL.build.module.map.boardPicker.board.SquareGrid dx="60.0" dy="40.0" x0="30" y0="20" snapTo="true">
+                <VASSAL.build.module.map.boardPicker.board.mapgrid.SquareGridNumbering hType="N" vType="N" hOff="1" vOff="1" hLeading="1" vLeading="1" sep="" first="H" hDescend="false" vDescend="false"/>
+              </VASSAL.build.module.map.boardPicker.board.SquareGrid>
+            </VASSAL.build.module.map.boardPicker.Board>
+          </VASSAL.build.module.map.BoardPicker>
+          <VASSAL.build.module.map.DrawPile name="Hidden" owningBoard="Board1" x="500" y="350" width="50" height="50" faceDown="Always" shuffle="Always"/>
+          <VASSAL.build.module.map.SetupStack name="Start" owningBoard="Board1" x="300" y="200">
+            <VASSAL.build.widget.PieceSlot entryName="Dummy" gpid="1" width="50" height="50">+/null/piece;;;board.png;Dummy/null;300;200;1;0</VASSAL.build.widget.PieceSlot>
+          </VASSAL.build.module.map.SetupStack>
+        </VASSAL.build.module.Map>
+        <VASSAL.build.module.PieceWindow name="Markers">
+          <VASSAL.build.widget.TabWidget entryName="Markers">
+            <VASSAL.build.widget.ListWidget entryName="General">
+              <VASSAL.build.widget.PieceSlot entryName="Status Marker" gpid="50" width="50" height="50">+/null/piece;;;board.png;Status Marker/null;0;0;50;0</VASSAL.build.widget.PieceSlot>
+            </VASSAL.build.widget.ListWidget>
+          </VASSAL.build.widget.TabWidget>
+        </VASSAL.build.module.PieceWindow>
+      </VASSAL.build.GameModule>
+    XML
+  end
+
+  # The breadcrumb spec a PlaceMarker trait uses to point at the "Status Marker"
+  # palette slot above (PieceWindow → TabWidget → ListWidget → PieceSlot).
+  STATUS_MARKER_SPEC =
+    "VASSAL.build.module.PieceWindow:Markers/VASSAL.build.widget.TabWidget:Markers/" \
+    "VASSAL.build.widget.ListWidget:General/VASSAL.build.widget.PieceSlot:Status Marker".freeze
+
+  # A unit whose "Mark" menu command (a TriggerAction) reports and then places a
+  # Status Marker on itself (PlaceMarker), mirroring Holland '44's Disrupted etc.
+  def marker_command_unit_traits(command_key: "key:68,585")
+    [
+      { "kind" => "trigger", "command" => "Mark", "key" => command_key, "watch_keys" => [],
+        "action_keys" => [ "named:ReportMark", "named:Mark" ] },
+      { "kind" => "place_marker", "key" => "named:Mark", "spec" => STATUS_MARKER_SPEC,
+        "x_off" => 0, "y_off" => 0, "gpid" => "1474" },
+      { "kind" => "report", "keys" => [ "named:ReportMark" ], "format" => "$location$: $newPieceName$ marked" },
+      { "kind" => "basic", "image" => "board.png", "name" => "Unit" }
+    ]
+  end
+
+  # Parsed-trait stacks for the reveal scenario: a marker that records its
+  # location, draws from the "Hidden" deck and removes itself; and a unit that
+  # sends itself to the recorded location when the relayed key arrives.
+  def reveal_marker_traits(reveal_key: "key:70,130")
+    [
+      { "kind" => "trigger", "command" => "Reveal", "key" => reveal_key, "watch_keys" => [],
+        "action_keys" => [ "named:SetLocation", "named:BringToMap", "named:Remove" ] },
+      { "kind" => "set_property", "name" => "GEUnkLoc",
+        "changes" => [ { "key" => "named:SetLocation", "op" => "P", "value" => "$LocationName$" } ] },
+      { "kind" => "global_key", "key" => "named:BringToMap", "global_key" => "named:GEUnkPlacement",
+        "deck" => "Hidden", "count" => 1 },
+      { "kind" => "send_to", "key" => "named:Remove", "dest" => "L", "map" => "Main Map", "board" => "Board1",
+        "x" => 510, "y" => 300 },
+      { "kind" => "basic", "image" => "board.png", "name" => "Marker" }
+    ]
+  end
+
+  def reveal_unit_traits
+    [
+      { "kind" => "trigger", "key" => "named:GEUnkPlacement", "watch_keys" => [],
+        "action_keys" => [ "named:SendToMap", "named:ReportRevealed" ] },
+      { "kind" => "send_to", "key" => "named:SendToMap", "dest" => "G", "map" => "Main Map",
+        "board" => "Board1", "grid_location" => "$GEUnkLoc$" },
+      { "kind" => "report", "keys" => [ "named:ReportRevealed" ], "format" => "$location$: $newPieceName$ revealed" },
+      { "kind" => "basic", "image" => "board.png", "name" => "Real Unit" }
+    ]
+  end
+
   # A CardSlot/PieceSlot body: a mask trait wrapping a basic piece.
   def card_slot_text(image, name, gpid)
     "+/null/obs;F;back.png;Flip;I;?;\tpiece;;;#{image};#{name}/null\tnull;0;0;#{gpid};0"

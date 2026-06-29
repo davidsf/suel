@@ -29,6 +29,7 @@ Rails.application.routes.draw do
         patch :adjust_property
         patch :play
         patch :discard
+        post :command
       end
     end
     resources :decks, only: [] do

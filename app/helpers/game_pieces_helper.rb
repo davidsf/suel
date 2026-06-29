@@ -56,7 +56,9 @@ module GamePiecesHelper
       flippable: game_piece.traits.any? { |t| t["kind"] == "mask" && t["back_image"].present? },
       rotatable: game_piece.traits.any? { |t| t["kind"] == "rotate" },
       layers: layers.to_json,
-      properties: properties.to_json
+      properties: properties.to_json,
+      command_url: command_game_piece_path(game, game_piece),
+      commands: game_piece.available_commands(game.properties).to_json
     }
   end
 end

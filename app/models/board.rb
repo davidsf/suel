@@ -32,4 +32,10 @@ class Board < ApplicationRecord
   def location_name(x, y)
     Vassal::GridLocation.name(grid, x, y, width: width.to_i, height: height.to_i)
   end
+
+  # Inverse of #location_name: the board-local [x, y] for a location name, or
+  # nil. Used by SendToLocation to drop a piece onto a named hex/region.
+  def point_for_location(location)
+    Vassal::GridLocation.point_for(grid, location, width: width.to_i, height: height.to_i)
+  end
 end

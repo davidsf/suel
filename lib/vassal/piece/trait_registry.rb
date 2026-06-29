@@ -24,6 +24,23 @@ module Vassal
         d
       end
 
+      # Canonical form of a NamedKeyStroke token ("code,modifiers" or
+      # "code,modifiers,name") for cross-piece matching: VASSAL matches named
+      # keystrokes by name and physical ones by code+modifiers. Returns nil for
+      # an empty token. The command bus compares these strings directly.
+      def self.keystroke(token)
+        token = token.to_s
+        return nil if token.empty?
+        code, modifiers, name = token.split(",", 3)
+        name.to_s.empty? ? "key:#{code},#{modifiers}" : "named:#{name}"
+      end
+
+      # A StringArray of NamedKeyStroke tokens (',' delimited, inner commas
+      # escaped) decoded to canonical keystrokes, empties dropped.
+      def self.keystrokes(decoder)
+        decoder.next_string_array.filter_map { |k| keystroke(k) }
+      end
+
       def self.basic(type, state)
         d = decoder(type)
         st = SequenceEncoder::Decoder.new(state, ";")
@@ -221,6 +238,144 @@ module Vassal
         menu.gsub(/[+\-\d]/, "").strip.presence
       end
 
+      # TriggerAction "macro;" — a menu command (or watched keystrokes) that
+      # performs a sequence of keystrokes on the piece. command is the
+      # right-click menu text (blank = no menu item); key and watch_keys are the
+      # triggers; action_keys are fired in order when triggered.
+      def self.trigger_action(type, state)
+        d = decoder(type)
+        d.next_token("") # name
+        command = d.next_token("")
+        key = keystroke(d.next_token(""))
+        property_match = d.next_token("")
+        watch_keys = keystrokes(d)
+        action_keys = keystrokes(d)
+        { "kind" => "trigger", "command" => command.presence, "key" => key,
+          "property_match" => property_match.presence,
+          "watch_keys" => watch_keys, "action_keys" => action_keys }.compact
+      end
+
+      # SendToLocation "sendto;" — on a key command, moves the piece to a
+      # destination. dest: L=fixed board point, G=by location name, Z=zone,
+      # R=region. Names/locations support $property$ tokens, resolved at runtime.
+      def self.send_to(type, state)
+        d = decoder(type)
+        command = d.next_token("")
+        key = keystroke(d.next_token(""))
+        map = d.next_token("")
+        board = d.next_token("")
+        x = d.next_token("")
+        y = d.next_token("")
+        6.times { d.next_token("") } # back command/key, x/y index, x/y offset
+        d.next_token("") # description
+        dest = d.next_token("L")
+        zone = d.next_token("")
+        region = d.next_token("")
+        d.next_token("") # property filter
+        grid_location = d.next_token("")
+        { "kind" => "send_to", "command" => command.presence, "key" => key,
+          "map" => map.presence, "board" => board.presence,
+          "x" => (x.to_i if x.present?), "y" => (y.to_i if y.present?),
+          "dest" => dest[0], "zone" => zone.presence, "region" => region.presence,
+          "grid_location" => grid_location.presence }.compact
+      end
+
+      # CounterGlobalKeyCommand "globalkey;" — on a key command, sends global_key
+      # to other pieces matching a target. We capture the deck name from the
+      # GlobalCommandTarget descriptor (the pipe-delimited token), which is how
+      # this game reveals a unit from a hidden-units deck.
+      def self.global_key_command(type, state)
+        d = decoder(type)
+        command = d.next_token("")
+        key = keystroke(d.next_token(""))
+        global_key = keystroke(d.next_token(""))
+        property_filter = d.next_token("")
+        rest = []
+        rest << d.next_token while d.more_tokens?
+        target = rest.find { |t| t.to_s.include?("|") }
+        # "Apply to N pieces of the deck" — the count sits right before the
+        # target descriptor; absent/0 means apply to all matching pieces.
+        count = target && rest[rest.index(target) - 1].to_s[/\A\d+\z/]&.to_i
+        { "kind" => "global_key", "command" => command.presence, "key" => key,
+          "global_key" => global_key, "property_filter" => property_filter.presence,
+          "deck" => deck_from_target(target), "count" => count, "target" => target }.compact
+      end
+
+      # GlobalCommandTarget pipe-string: COUNTER|loc?|TYPE|map|board|zone|region|
+      # x|y|deck|... — when TYPE is DECK the deck name follows 7 fields later.
+      def self.deck_from_target(target)
+        return nil if target.blank?
+        parts = target.split("|", -1)
+        idx = parts.index("DECK")
+        idx && parts[idx + 7].presence
+      end
+
+      # SetGlobalProperty "setprop;" — extends DynamicProperty: each change
+      # command maps a key to an operation on a named global property. op "P"
+      # sets the value directly (a $property$-expandable expression), "I"
+      # increments. Used here to record the marker's location before revealing.
+      def self.set_global_property(type, state)
+        d = decoder(type)
+        name = d.next_token("")
+        d.next_token("") # numeric,min,max,wrap constraints
+        commands_raw = d.next_token("")
+        d.next_token("") # description
+        changes = SequenceEncoder::Decoder.new(commands_raw, ",").filter_map do |cmd|
+          sub = SequenceEncoder::Decoder.new(cmd, ":")
+          sub.next_token("") # menu name
+          key = keystroke(sub.next_token(""))
+          changer = SequenceEncoder::Decoder.new(sub.next_token(""), ",")
+          op = changer.next_token("")
+          next nil unless key && op.present?
+          { "key" => key, "op" => op, "value" => changer.remaining }
+        end
+        { "kind" => "set_property", "name" => name.presence, "changes" => changes }.compact
+      end
+
+      # PlaceMarker "placemark;" — on a matching key, creates a new marker piece
+      # at this piece's location. spec points to the marker's palette slot (a
+      # "ClassName:Label" breadcrumb ending in the slot name); the trailing gpid
+      # is the id stamped on the new instance, not the source slot's gpid.
+      def self.place_marker(type, state)
+        d = decoder(type)
+        d.next_token("") # command (menu text; the firing TriggerAction carries it)
+        key = keystroke(d.next_token(""))
+        spec = d.next_token("")
+        d.next_token("") # marker text
+        x_off = d.next_int(0)
+        y_off = d.next_int(0)
+        match_rotation = d.next_boolean(false)
+        d.next_token("") # afterburner key
+        d.next_token("") # description
+        gpid = d.next_token("")
+        { "kind" => "place_marker", "key" => key, "spec" => spec.presence,
+          "x_off" => x_off, "y_off" => y_off, "match_rotation" => match_rotation,
+          "gpid" => gpid.presence }.compact
+      end
+
+      # ReportState "report;" — on a matching key, writes a message to the chat
+      # log. keys are the triggering keystrokes; format is a $property$ template
+      # ($location$, $newPieceName$ etc., resolved when reported).
+      def self.report(type, state)
+        d = decoder(type)
+        keys = keystrokes(d)
+        format = d.next_token("")
+        { "kind" => "report", "keys" => keys, "format" => format.presence }.compact
+      end
+
+      # RestrictCommands "hideCmd;" — hides or disables other menu commands while
+      # a property expression matches. action is "Hide" or "Disable"; keys are
+      # the restricted commands' keystrokes.
+      def self.restrict_commands(type, state)
+        d = decoder(type)
+        d.next_token("") # name
+        action = d.next_token("")
+        property_match = d.next_token("")
+        keys = keystrokes(d)
+        { "kind" => "restrict_commands", "action" => action.presence,
+          "property_match" => property_match.presence, "keys" => keys }.compact
+      end
+
       PARSERS = {
         "piece;" => method(:basic),
         "emb2;" => method(:layer),
@@ -232,7 +387,14 @@ module Vassal
         "hide;" => method(:invisible),
         "prototype;" => method(:prototype),
         "markmoved;" => method(:moved),
-        "PROP;" => method(:dynamic_property)
+        "PROP;" => method(:dynamic_property),
+        "macro;" => method(:trigger_action),
+        "sendto;" => method(:send_to),
+        "globalkey;" => method(:global_key_command),
+        "setprop;" => method(:set_global_property),
+        "placemark;" => method(:place_marker),
+        "report;" => method(:report),
+        "hideCmd;" => method(:restrict_commands)
       }.freeze
     end
   end

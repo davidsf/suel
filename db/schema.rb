@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_24_212949) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -139,6 +139,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_212949) do
     t.integer "creator_id", null: false
     t.integer "game_module_id", null: false
     t.string "name", null: false
+    t.json "properties", default: {}, null: false
     t.integer "scenario_id", null: false
     t.string "status", default: "open", null: false
     t.datetime "updated_at", null: false

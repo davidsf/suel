@@ -42,6 +42,18 @@ class GamePiecesController < ApplicationController
     end
   end
 
+  # Run a VASSAL key command the piece exposes (e.g. "Reveal"). The keystroke
+  # must be one of the piece's own menu commands; effects reach every viewer via
+  # the model broadcasts plus the game's command-result broadcast.
+  def command
+    keystroke = params[:command].to_s
+    return head :forbidden unless @piece.menu_commands.any? { |c| c["key"] == keystroke }
+
+    result = PieceCommand.run(@piece, keystroke, by: @player.side)
+    @game.apply_command_result(result)
+    head :ok
+  end
+
   # Play a card from the actor's hand onto a map.
   def play
     return head :forbidden unless @piece.hand_side == @player.side

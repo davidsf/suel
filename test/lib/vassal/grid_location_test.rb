@@ -56,4 +56,36 @@ class Vassal::GridLocationTest < ActiveSupport::TestCase
     }
     assert_equal "Norte 0101", Vassal::GridLocation.name(zoned, 32, 28, width: 300, height: 200)
   end
+
+  test "point_for is the inverse of name on a hex grid" do
+    %w[0101 0201 0510 1003].each do |location|
+      point = Vassal::GridLocation.point_for(HEX, location, width: 1000, height: 1000)
+      assert point, "no point for #{location}"
+      assert_equal location, Vassal::GridLocation.name(HEX, *point, width: 1000, height: 1000)
+    end
+  end
+
+  test "point_for looks a region up by name" do
+    grid = { "type" => "region", "regions" => [
+      { "name" => "Turn 1", "x" => 100, "y" => 50 }, { "name" => "Turn 2", "x" => 200, "y" => 50 }
+    ] }
+    assert_equal [ 200, 50 ], Vassal::GridLocation.point_for(grid, "Turn 2", width: 300, height: 100)
+    assert_nil Vassal::GridLocation.point_for(grid, "Turn 9", width: 300, height: 100)
+  end
+
+  test "point_for resolves a grid location inside a zone and a zone by its name" do
+    zoned = {
+      "type" => "zoned",
+      "zones" => [
+        { "name" => "Hexes", "path" => [ [ 0, 0 ], [ 600, 0 ], [ 600, 600 ], [ 0, 600 ] ],
+          "location_format" => "$gridLocation$", "grid" => HEX },
+        { "name" => "Reserva", "path" => [ [ 1000, 1000 ], [ 1100, 1000 ], [ 1100, 1100 ], [ 1000, 1100 ] ] }
+      ]
+    }
+    point = Vassal::GridLocation.point_for(zoned, "0201", width: 2000, height: 2000)
+    assert_equal "0201", Vassal::GridLocation.name(zoned, *point, width: 2000, height: 2000)
+
+    assert_equal [ 1050, 1050 ], Vassal::GridLocation.point_for(zoned, "Reserva", width: 2000, height: 2000),
+      "a name-only zone resolves to its centroid"
+  end
 end

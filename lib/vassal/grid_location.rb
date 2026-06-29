@@ -84,5 +84,98 @@ module Vassal
       regions = (grid["regions"] || []).select { |r| r["x"] && r["y"] }
       regions.min_by { |r| (r["x"] - x)**2 + (r["y"] - y)**2 }&.dig("name")
     end
+
+    # Inverse of #name: the board-local [x, y] for a location name, or nil.
+    # Regions are looked up directly; hex/square cells (and zoned grids through
+    # their background grid) are matched by re-running the forward naming on
+    # each candidate cell centre, so every quirk — descending, stagger, zone
+    # locationFormat — is honoured without re-deriving its inverse. Only runs on
+    # explicit "send to location" commands, so the linear scan is acceptable.
+    def point_for(grid, location, width:, height:)
+      return nil unless grid.is_a?(Hash) && location.present?
+
+      case grid["type"]
+      when "region" then region_point(grid, location)
+      when "zoned" then zoned_point(grid, location, width:, height:)
+      when "hex", "square" then cell_point(grid, location, width:, height:)
+      end
+    end
+
+    def region_point(grid, location)
+      r = (grid["regions"] || []).find { |region| region["name"] == location && region["x"] && region["y"] }
+      [ r["x"], r["y"] ] if r
+    end
+
+    def zoned_point(grid, location, width:, height:)
+      zones = grid["zones"] || []
+
+      # Zones addressed by their own name (locationFormat "$name$") resolve to
+      # the zone centroid — cheap, no lattice scan.
+      named = zones.find { |z| z["path"].present? && format_zone(z, nil) == location }
+      return centroid(named["path"]) if named
+
+      # Otherwise a grid location inside some zone: scan each grid-bearing zone's
+      # cell centres (clipped to the zone) and name them through that zone, the
+      # inverse of #zoned_name.
+      zones.each do |zone|
+        path = zone["path"]
+        next if path.blank?
+        inner = zone["use_parent_grid"] == true ? grid["background"] : zone["grid"]
+        next unless inner.is_a?(Hash)
+
+        point = cell_centers(inner, width, height, bounds: bbox(path)).find do |x, y|
+          GridSnap.contains?(path, x, y) &&
+            format_zone(zone, name(inner, x, y, width:, height:)) == location
+        end
+        return point if point
+      end
+      nil
+    end
+
+    def cell_point(grid, location, width:, height:)
+      cell_centers(grid, width, height).find { |x, y| name(grid, x, y, width:, height:) == location }
+    end
+
+    # Cell centres of a hex/square grid, mirroring GridNumbering's lattice
+    # (columns every dx, hex odd columns shifted dy/2) so each centre maps to a
+    # named cell. bounds [x0, y0, x1, y1] clips the scan to a region (default
+    # the whole board). Returns an enumerator of [x, y] in board coordinates.
+    def cell_centers(grid, width, height, bounds: nil)
+      return enum_for(:cell_centers, grid, width, height, bounds:) unless block_given?
+
+      dx = grid["dx"].to_f
+      dy = grid["dy"].to_f
+      return if dx <= 0 || dy <= 0
+      x0 = grid["x0"].to_i
+      y0 = grid["y0"].to_i
+      hex = grid["type"] == "hex"
+      sideways = hex && grid["sideways"]
+      bx0, by0, bx1, by1 = bounds || [ 0, 0, width, height ]
+      # Iterate in the lattice's own (rotated, when sideways) space: the column
+      # axis runs along px, rows along py.
+      px0, py0, px1, py1 = sideways ? [ by0, bx0, by1, bx1 ] : [ bx0, by0, bx1, by1 ]
+
+      ((px0 - dx - x0) / dx).floor.upto(((px1 + dx - x0) / dx).ceil) do |c|
+        cx = x0 + c * dx
+        offset = hex && c.odd? ? dy / 2.0 : 0.0
+        ((py0 - dy - y0) / dy).floor.upto(((py1 + dy - y0) / dy).ceil) do |r|
+          cy = y0 + offset + r * dy
+          x, y = sideways ? [ cy, cx ] : [ cx, cy ]
+          yield [ x.round, y.round ] if x.between?(bx0, bx1) && y.between?(by0, by1)
+        end
+      end
+    end
+
+    def bbox(path)
+      xs = path.map { |p| p[0] }
+      ys = path.map { |p| p[1] }
+      [ xs.min, ys.min, xs.max, ys.max ]
+    end
+
+    def centroid(path)
+      xs = path.map { |p| p[0] }
+      ys = path.map { |p| p[1] }
+      [ (xs.sum / path.size.to_f).round, (ys.sum / path.size.to_f).round ]
+    end
   end
 end
