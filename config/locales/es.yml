@@ -144,7 +144,6 @@ es:
     send: "Enviar"
     flip: "Voltear"
     rotate: "Girar"
-    discard: "Descartar"
     draw: "Robar"
     shuffle: "Barajar"
     reshuffle: "Rebarajar"

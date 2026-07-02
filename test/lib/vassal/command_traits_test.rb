@@ -90,6 +90,33 @@ class Vassal::CommandTraitsTest < ActiveSupport::TestCase
     assert_equal "297", t["gpid"]
   end
 
+  test "ReturnToDeck to a fixed deck by name expression (v2)" do
+    t = parse("return;Discard;68,130;;Select destination Deck for card;;2;false;Discards")
+    assert_equal "return_to_deck", t["kind"]
+    assert_equal "Discard", t["command"]
+    assert_equal "key:68,130", t["key"]
+    assert_equal false, t["select"]
+    assert_equal "Discards", t["deck"]
+  end
+
+  test "ReturnToDeck prompting the player to pick the deck (v2)" do
+    t = parse("return;Return to Deck;82,130;;Choose a deck;;2;true;")
+    assert t["select"]
+    assert_nil t["deck"]
+    assert_equal "Choose a deck", t["prompt"]
+  end
+
+  test "legacy ReturnToDeck names the deck directly (blank = prompt)" do
+    t = parse("return;Discard;68,130;Discards")
+    assert_equal "return_to_deck", t["kind"]
+    assert_equal false, t["select"]
+    assert_equal "Discards", t["deck"]
+
+    t = parse("return;Return to Deck;82,130;")
+    assert t["select"], "a legacy trait without a deck name prompts for one"
+    assert_nil t["deck"]
+  end
+
   test "RestrictCommands captures its action and gating expression" do
     t = parse("hideCmd;No Reveal when GE Unknown Units Deck Empty;Disable;{$GEUnkUnitsDeckCount$==0};70\\,130")
     assert_equal "restrict_commands", t["kind"]

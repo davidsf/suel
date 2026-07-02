@@ -33,6 +33,41 @@ class PieceCommandTest < ActiveSupport::TestCase
     assert_equal "0101", @marker.location_name
   end
 
+  test "ReturnToDeck sends the piece back to the named deck" do
+    @marker.update!(traits: return_to_deck_traits(deck: "Hidden"))
+
+    cmd = PieceCommand.run(@marker, "key:68,130", by: "GE")
+    @marker.reload
+    assert @marker.in_deck?
+    assert_equal @deck.id, @marker.deck_id
+    assert_includes cmd.removed, @marker, "its public node must be broadcast-removed"
+    assert_includes cmd.source_decks, @deck, "the destination marker must refresh"
+  end
+
+  test "ReturnToDeck resolves $property$ tokens in the deck name" do
+    @game.set_property!("DiscardPile", "Hidden")
+    @marker.update!(traits: return_to_deck_traits(deck: "$DiscardPile$"))
+
+    PieceCommand.run(@marker, "key:68,130", by: "GE")
+    assert_equal @deck.id, @marker.reload.deck_id
+  end
+
+  test "a prompting ReturnToDeck uses the player's pick and no-ops without one" do
+    @marker.update!(traits: return_to_deck_traits(select: true))
+
+    PieceCommand.run(@marker, "key:68,130", by: "GE")
+    assert @marker.reload.on_map?, "no deck picked = cancelled dialog = no-op"
+
+    PieceCommand.run(@marker, "key:68,130", by: "GE", deck_choice: @deck)
+    assert_equal @deck.id, @marker.reload.deck_id
+  end
+
+  test "a ReturnToDeck with menu text is exposed as a piece menu command" do
+    @marker.update!(traits: return_to_deck_traits(select: true))
+    command = @marker.menu_commands.first
+    assert_equal({ "label" => "Discard", "key" => "key:68,130", "prompt_deck" => true }, command)
+  end
+
   test "Reveal records the marker location into the game property" do
     PieceCommand.run(@marker, REVEAL, by: "GE")
     assert_equal "0101", @game.reload.property("GEUnkLoc")

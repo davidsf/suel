@@ -280,6 +280,29 @@ module Vassal
           "grid_location" => grid_location.presence }.compact
       end
 
+      # ReturnToDeck "return;" — a menu command that sends the piece back to a
+      # DrawPile. Legacy traits (version < 2) name the deck directly in the
+      # deckId slot (blank = prompt the player to pick one); v2 carries an
+      # explicit select flag plus a $property$-capable deck-name expression.
+      def self.return_to_deck(type, state)
+        d = decoder(type)
+        command = d.next_token("")
+        key = keystroke(d.next_token(""))
+        deck_id = d.next_token("")
+        prompt = d.next_token("")
+        d.next_token("") # description
+        version = d.next_token("").to_i
+        if version < 2
+          select = deck_id.empty?
+          deck = deck_id
+        else
+          select = d.next_token("true") == "true"
+          deck = d.next_token("")
+        end
+        { "kind" => "return_to_deck", "command" => command.presence, "key" => key,
+          "select" => select, "deck" => deck.presence, "prompt" => prompt.presence }.compact
+      end
+
       # CounterGlobalKeyCommand "globalkey;" — on a key command, sends global_key
       # to other pieces matching a target. We capture the deck name from the
       # GlobalCommandTarget descriptor (the pipe-delimited token), which is how
@@ -411,6 +434,7 @@ module Vassal
         "PROP;" => method(:dynamic_property),
         "macro;" => method(:trigger_action),
         "sendto;" => method(:send_to),
+        "return;" => method(:return_to_deck),
         "globalkey;" => method(:global_key_command),
         "setprop;" => method(:set_global_property),
         "placemark;" => method(:place_marker),

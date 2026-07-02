@@ -65,6 +65,17 @@ class PieceCommandControllerTest < ActionDispatch::IntegrationTest
     assert_not GamePiece.exists?(marker.id)
   end
 
+  test "a prompting ReturnToDeck command takes the player's deck pick" do
+    sign_in_as users(:one)
+    card = @game.game_pieces.create!(game_map: @map, board: @board, x: @cell[0], y: @cell[1],
+                                     z_order: 7, name: "Card", type_string: "x",
+                                     traits: return_to_deck_traits(select: true))
+
+    post command_game_piece_path(@game, card), params: { command: "key:68,130", deck: @deck.id }
+    assert_response :success
+    assert_equal @deck.id, card.reload.deck_id
+  end
+
   test "an unknown keystroke the piece does not expose is rejected" do
     sign_in_as users(:one)
     post command_game_piece_path(@game, @marker), params: { command: "named:Bogus" }

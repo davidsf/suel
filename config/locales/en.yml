@@ -144,7 +144,6 @@ en:
     send: "Send"
     flip: "Flip"
     rotate: "Rotate"
-    discard: "Discard"
     draw: "Draw"
     shuffle: "Shuffle"
     reshuffle: "Reshuffle"
