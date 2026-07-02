@@ -62,8 +62,19 @@ class GamesController < ApplicationController
     deck_map_ids = @game_module.game_maps.kind_map.joins(:decks).distinct.pluck(:id)
     map_ids = (piece_map_ids + (deck_map_ids - piece_map_ids))
     @maps = map_ids.filter_map { |map_id| GameMap.includes(:boards).find_by(id: map_id) }
-    @game_map = @maps.find { |m| m.id == params[:map].to_i } || @maps.first
+    @game_map = @maps.find { |m| m.id == params[:map].to_i }
+    if @game_map.nil? && params[:map].present?
+      # A relocate target may be a real map that has no pieces or decks yet —
+      # render it too (and surface it in the selector) so the move can land.
+      @game_map = @game_module.game_maps.kind_map.includes(:boards).find_by(id: params[:map])
+      @maps = [ @game_map, *@maps ] if @game_map
+    end
+    @game_map ||= @maps.first
     @layout = @game_map ? @game.board_layout(@game_map).entries : []
+    # Destinations offered by the "move to another map" piece menu: every real
+    # map of the module except the one in view (VASSAL lets a piece be dragged
+    # to any map window; we don't classify maps).
+    @destination_maps = @game_module.game_maps.kind_map.where.not(id: @game_map&.id).order(:position)
 
     @pieces = @game_map ? placed.where(game_map_id: @game_map.id).order(:z_order) : GamePiece.none
     @dice_buttons = @game_module.dice_buttons

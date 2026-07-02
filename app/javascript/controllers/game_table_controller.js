@@ -6,7 +6,7 @@ import { Turbo } from "@hotwired/turbo-rails"
 // with pan_zoom: spectators' pointer events fall through to panning; players
 // dragging a piece stop propagation so the board doesn't pan underneath.
 export default class extends Controller {
-  static values = { playable: Boolean, snapUrl: String, map: Number }
+  static values = { playable: Boolean, snapUrl: String, map: Number, maps: Array, relocateUrlTemplate: String }
   static targets = ["toolbar", "pieceName", "flipButton", "rotateRow", "rotateLeft", "rotateRight", "layerButtons",
                     "deckToolbar", "deckName", "drawButton", "reshuffleButton",
                     "handToolbar", "handCardName", "discardDeck",
@@ -35,6 +35,9 @@ export default class extends Controller {
         this.viewportDownAt = null
         if (!start || Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y) >= 4) return
 
+        // In placement mode a click drops the in-flight piece on this map.
+        if (this.placingId) { this.placeAt(e.clientX, e.clientY); return }
+
         // Spectators' piece events bubble here: let them expand stacks too
         const piece = e.target.closest(".table-piece")
         if (piece && !this.playableValue) {
@@ -53,6 +56,11 @@ export default class extends Controller {
     }
 
     this.layoutStacks()
+
+    // Arriving with ?place=<id> means we navigated here to drop a piece coming
+    // from another map (the "move to another map" flow).
+    const placeId = new URLSearchParams(location.search).get("place")
+    if (placeId && this.playableValue) this.enterPlacement(placeId)
   }
 
   disconnect() {
@@ -60,6 +68,10 @@ export default class extends Controller {
     if (this.viewport) {
       this.viewport.removeEventListener("pointerdown", this.onViewportDown)
       this.viewport.removeEventListener("pointerup", this.onViewportUp)
+    }
+    if (this.placingId) {
+      document.removeEventListener("pointermove", this.onPlacementMove)
+      document.removeEventListener("keydown", this.onPlacementKey)
     }
   }
 
@@ -467,6 +479,40 @@ export default class extends Controller {
       this.layerButtonsTarget.appendChild(row)
     })
 
+    // "Move to another map" — the web equivalent of dragging a piece between
+    // VASSAL's separate map windows. A collapsible submenu (modules like
+    // Holland '44 have many maps, so a flat list would swamp the menu); choosing
+    // one navigates there in placement mode (carry the piece, click to drop).
+    if (this.mapsValue.length > 0) {
+      const submenu = document.createElement("div")
+      submenu.className = "menu-submenu"
+      submenu.hidden = !this.mapMenuExpanded
+      this.mapsValue.forEach((map) => {
+        const row = document.createElement("button")
+        row.type = "button"
+        row.className = "menu-row clickable"
+        row.append(this.menuLabel(map.name))
+        row.addEventListener("click", () => this.moveToMap(map, piece))
+        submenu.appendChild(row)
+      })
+
+      const toggle = document.createElement("button")
+      toggle.type = "button"
+      toggle.className = "menu-row clickable"
+      const caret = this.menuState(this.mapMenuExpanded ? "▾" : "▸")
+      toggle.append(this.menuLabel("Mover a otro mapa"), caret)
+      toggle.addEventListener("click", () => {
+        this.mapMenuExpanded = !this.mapMenuExpanded
+        submenu.hidden = !this.mapMenuExpanded
+        caret.textContent = this.mapMenuExpanded ? "▾" : "▸"
+        // Re-clamp: expanding grows the menu and it may need to flip above.
+        this.positionToolbar(this.toolbarTarget, this.selectedPiece() || piece)
+      })
+
+      this.layerButtonsTarget.appendChild(toggle)
+      this.layerButtonsTarget.appendChild(submenu)
+    }
+
     this.positionToolbar(this.toolbarTarget, piece)
   }
 
@@ -476,6 +522,71 @@ export default class extends Controller {
     this.send(piece.dataset.commandUrl, "POST", { command: key })
     this.hideActionToolbars()
     this.selectedId = null
+  }
+
+  // --- move to another map -------------------------------------------------
+
+  // Navigate to the chosen map carrying the piece id, so the destination page
+  // loads in placement mode (the piece still lives on its source map server-side
+  // until the drop lands).
+  moveToMap(map, piece) {
+    this.hideActionToolbars()
+    this.selectedId = null
+    const sep = map.url.includes("?") ? "&" : "?"
+    Turbo.visit(`${map.url}${sep}place=${piece.dataset.pieceId}`)
+  }
+
+  enterPlacement(pieceId) {
+    this.placingId = pieceId
+    this.showPlacementBanner()
+    this.onPlacementMove = (e) => {
+      const world = this.screenToWorld(e.clientX, e.clientY)
+      if (world) this.previewGhostAt(world); else this.hideGhost()
+    }
+    this.onPlacementKey = (e) => { if (e.key === "Escape") this.exitPlacement() }
+    document.addEventListener("pointermove", this.onPlacementMove)
+    document.addEventListener("keydown", this.onPlacementKey)
+  }
+
+  placeAt(clientX, clientY) {
+    const world = this.screenToWorld(clientX, clientY)
+    if (!world) return
+    const url = this.relocateUrlTemplateValue.replace("PIECE_ID", this.placingId)
+    this.send(url, "PATCH", { map: this.mapValue, x: world.x, y: world.y })
+    this.exitPlacement()
+  }
+
+  exitPlacement() {
+    if (!this.placingId) return
+    this.placingId = null
+    this.hideGhost()
+    document.removeEventListener("pointermove", this.onPlacementMove)
+    document.removeEventListener("keydown", this.onPlacementKey)
+    this.hidePlacementBanner()
+    // Drop ?place= so a refresh doesn't re-enter placement.
+    const url = new URL(location.href)
+    url.searchParams.delete("place")
+    history.replaceState({}, "", url)
+  }
+
+  showPlacementBanner() {
+    if (!this.placementBanner) {
+      this.placementBanner = document.createElement("div")
+      this.placementBanner.className = "placement-banner"
+      const text = document.createElement("span")
+      text.textContent = "Coloca la ficha: haz clic en el mapa · Esc para cancelar"
+      const cancel = document.createElement("button")
+      cancel.type = "button"
+      cancel.textContent = "Cancelar"
+      cancel.addEventListener("click", () => this.exitPlacement())
+      this.placementBanner.append(text, cancel)
+      this.element.appendChild(this.placementBanner)
+    }
+    this.placementBanner.hidden = false
+  }
+
+  hidePlacementBanner() {
+    if (this.placementBanner) this.placementBanner.hidden = true
   }
 
   propStepButton(text, title, index, delta) {

@@ -98,6 +98,44 @@ module VmodTestHelper
     XML
   end
 
+  # A module with two real (kind: map) windows — "Main Map" and "Reinforcements"
+  # — each a square-gridded board with an at-start stack, for exercising moving a
+  # piece between maps (VASSAL's drag-between-windows).
+  def create_two_map_module!
+    create_game_module!(
+      "buildFile.xml" => two_map_build_file,
+      "moduledata" => %(<?xml version="1.0"?><data version="1"><name>TwoMap</name><version>1.0</version><VassalVersion>3.7.0</VassalVersion></data>),
+      "images/board.png" => "fake"
+    )
+  end
+
+  def two_map_build_file
+    map = ->(map_name, board, stack, slot, gpid, x, y) do
+      <<~MAP
+        <VASSAL.build.module.Map mapName="#{map_name}">
+          <VASSAL.build.module.map.BoardPicker>
+            <VASSAL.build.module.map.boardPicker.Board name="#{board}" image="board.png" width="600" height="400">
+              <VASSAL.build.module.map.boardPicker.board.SquareGrid dx="60.0" dy="40.0" x0="30" y0="20" snapTo="true">
+                <VASSAL.build.module.map.boardPicker.board.mapgrid.SquareGridNumbering hType="N" vType="N" hOff="1" vOff="1" hLeading="1" vLeading="1" sep="" first="H" hDescend="false" vDescend="false"/>
+              </VASSAL.build.module.map.boardPicker.board.SquareGrid>
+            </VASSAL.build.module.map.boardPicker.Board>
+          </VASSAL.build.module.map.BoardPicker>
+          <VASSAL.build.module.map.SetupStack name="#{stack}" owningBoard="#{board}" x="#{x}" y="#{y}">
+            <VASSAL.build.widget.PieceSlot entryName="#{slot}" gpid="#{gpid}" width="50" height="50">+/null/piece;;;board.png;#{slot}/null;#{x};#{y};#{gpid};0</VASSAL.build.widget.PieceSlot>
+          </VASSAL.build.module.map.SetupStack>
+        </VASSAL.build.module.Map>
+      MAP
+    end
+    <<~XML
+      <?xml version="1.0"?>
+      <VASSAL.build.GameModule name="TwoMap" version="1.0" VassalVersion="3.7.0">
+        <VASSAL.build.module.PlayerRoster><entry>Bando A</entry><entry>Bando B</entry></VASSAL.build.module.PlayerRoster>
+        #{map.("Main Map", "Board1", "Start", "Dummy", 1, 300, 200)}
+        #{map.("Reinforcements", "Board2", "Reinf", "Reinforcement", 2, 150, 100)}
+      </VASSAL.build.GameModule>
+    XML
+  end
+
   # The breadcrumb spec a PlaceMarker trait uses to point at the "Status Marker"
   # palette slot above (PieceWindow → TabWidget → ListWidget → PieceSlot).
   STATUS_MARKER_SPEC =

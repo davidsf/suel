@@ -65,6 +65,19 @@ class GamePiecesController < ApplicationController
     render turbo_stream: turbo_stream.remove(dom_id(@piece, :hand))
   end
 
+  # Move an on-map piece to another map (the web equivalent of dragging a
+  # piece between VASSAL's separate map windows). Generic: any map piece can go
+  # to any real map of the module. Like #command, returns head :ok and lets the
+  # broadcasts update every viewer.
+  def relocate
+    return head :unprocessable_entity unless @piece.on_map?
+    game_map = GameMap.where(game_module_id: @game.game_module_id).kind_map.find(params[:map])
+    from_map = @piece.game_map
+    @piece.relocate_to!(game_map, params[:x].to_i, params[:y].to_i)
+    @game.after_piece_relocated(@piece, from_map:)
+    head :ok
+  end
+
   # Send a card (from the actor's hand, or any map piece) to a deck.
   def discard
     return head :forbidden if @piece.in_hand? && @piece.hand_side != @player.side
