@@ -6,7 +6,8 @@ import { Turbo } from "@hotwired/turbo-rails"
 // with pan_zoom: spectators' pointer events fall through to panning; players
 // dragging a piece stop propagation so the board doesn't pan underneath.
 export default class extends Controller {
-  static values = { playable: Boolean, snapUrl: String, map: Number, maps: Array, relocateUrlTemplate: String }
+  static values = { playable: Boolean, snapUrl: String, map: Number, maps: Array, relocateUrlTemplate: String,
+                    i18n: Object }
   static targets = ["toolbar", "pieceName", "flipButton", "rotateRow", "rotateLeft", "rotateRight", "layerButtons",
                     "deckToolbar", "deckName", "drawButton", "reshuffleButton",
                     "handToolbar", "handCardName", "discardDeck",
@@ -431,7 +432,7 @@ export default class extends Controller {
         const row = document.createElement("button")
         row.type = "button"
         row.className = "menu-row clickable"
-        row.title = `${label}: alternar`
+        row.title = `${label}: ${this.i18nValue.toggle}`
         row.append(this.menuLabel(label), this.menuState(layer.active ? "✓" : "—"))
         row.addEventListener("click", () => this.cycleLayer(index, 1))
         this.layerButtonsTarget.appendChild(row)
@@ -442,9 +443,9 @@ export default class extends Controller {
         stepper.className = "menu-stepper"
         const state = layer.active ? (layer.level_name || String(layer.level)) : "—"
         stepper.append(
-          this.menuStepButton("◀", `${label}: nivel anterior`, index, -1),
+          this.menuStepButton("◀", `${label}: ${this.i18nValue.prev_level}`, index, -1),
           this.menuState(state),
-          this.menuStepButton("▶", `${label}: siguiente nivel`, index, 1)
+          this.menuStepButton("▶", `${label}: ${this.i18nValue.next_level}`, index, 1)
         )
         row.append(this.menuLabel(label), stepper)
         this.layerButtonsTarget.appendChild(row)
@@ -500,7 +501,7 @@ export default class extends Controller {
       toggle.type = "button"
       toggle.className = "menu-row clickable"
       const caret = this.menuState(this.mapMenuExpanded ? "▾" : "▸")
-      toggle.append(this.menuLabel("Mover a otro mapa"), caret)
+      toggle.append(this.menuLabel(this.i18nValue.move_to_map), caret)
       toggle.addEventListener("click", () => {
         this.mapMenuExpanded = !this.mapMenuExpanded
         submenu.hidden = !this.mapMenuExpanded
@@ -574,10 +575,10 @@ export default class extends Controller {
       this.placementBanner = document.createElement("div")
       this.placementBanner.className = "placement-banner"
       const text = document.createElement("span")
-      text.textContent = "Coloca la ficha: haz clic en el mapa · Esc para cancelar"
+      text.textContent = this.i18nValue.placement_hint
       const cancel = document.createElement("button")
       cancel.type = "button"
-      cancel.textContent = "Cancelar"
+      cancel.textContent = this.i18nValue.cancel
       cancel.addEventListener("click", () => this.exitPlacement())
       this.placementBanner.append(text, cancel)
       this.element.appendChild(this.placementBanner)

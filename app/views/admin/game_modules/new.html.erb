@@ -1,4 +1,4 @@
-<h1>Subir módulo VASSAL</h1>
+<h1><%= t("modules.upload_title") %></h1>
 
 <%= form_with model: @game_module, url: admin_game_modules_path do |form| %>
   <% if @game_module.errors.any? %>
@@ -10,8 +10,8 @@
   <% end %>
 
   <p>
-    <%= form.label :package, "Fichero .vmod" %>
+    <%= form.label :package, t("modules.package_label") %>
     <%= form.file_field :package, accept: ".vmod,application/zip", required: true %>
   </p>
-  <p><%= form.submit "Subir e importar" %></p>
+  <p><%= form.submit t("modules.upload_submit") %></p>
 <% end %>

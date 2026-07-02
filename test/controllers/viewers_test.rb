@@ -24,18 +24,40 @@ class ViewersTest < ActionDispatch::IntegrationTest
     assert_match @game_module.name, response.body
   end
 
+  test "palette, charts and scenario picker render" do
+    get game_module_palette_path(@game_module)
+    assert_response :success
+
+    get game_module_charts_path(@game_module)
+    assert_response :success
+
+    get game_module_scenarios_path(@game_module)
+    assert_response :success
+  end
+
+  test "the UI follows the browser's Accept-Language" do
+    get root_path
+    assert_match "Modules", response.body, "defaults to English"
+
+    get root_path, headers: { "Accept-Language" => "es-ES,es;q=0.9,en;q=0.8" }
+    assert_match "Módulos", response.body
+
+    get root_path, headers: { "Accept-Language" => "fr-FR,fr;q=0.9" }
+    assert_match "Modules", response.body, "unsupported languages fall back to English"
+  end
+
   test "a signed-in admin sees the upload link on public pages" do
     sign_in_as users(:admin)
     get root_path
-    assert_match "Subir módulo", response.body
+    assert_match "Upload module", response.body
 
     get game_module_path(@game_module)
-    assert_match "Reimportar", response.body
+    assert_match "Reimport", response.body
   end
 
   test "anonymous visitors see no admin actions" do
     get root_path
-    assert_no_match "Subir módulo", response.body
+    assert_no_match "Upload module", response.body
   end
 
   test "board viewer renders with grid overlay" do

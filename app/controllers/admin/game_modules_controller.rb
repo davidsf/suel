@@ -9,7 +9,7 @@ class Admin::GameModulesController < Admin::BaseController
     @game_module = GameModule.new(package: params.dig(:game_module, :package))
     if @game_module.save
       ModuleImportJob.perform_later(@game_module)
-      redirect_to game_module_path(@game_module), notice: "Módulo subido; importando en segundo plano."
+      redirect_to game_module_path(@game_module), notice: t("flash.module_uploaded")
     else
       render :new, status: :unprocessable_entity
     end
@@ -18,13 +18,13 @@ class Admin::GameModulesController < Admin::BaseController
   def destroy
     FileUtils.rm_rf(@game_module.extracted_dir)
     @game_module.destroy!
-    redirect_to root_path, notice: "Módulo eliminado."
+    redirect_to root_path, notice: t("flash.module_deleted")
   end
 
   def reimport
     @game_module.update!(status: "pending", error_message: nil)
     ModuleImportJob.perform_later(@game_module)
-    redirect_to game_module_path(@game_module), notice: "Reimportando módulo."
+    redirect_to game_module_path(@game_module), notice: t("flash.module_reimporting")
   end
 
   private

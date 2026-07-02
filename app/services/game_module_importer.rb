@@ -60,7 +60,7 @@ class GameModuleImporter
     )
     @game_module.update!(charts: result.chart_windows.map { |w| { "name" => w.name, "charts" => w.charts } })
     result.other_components.each do |class_name, count|
-      warn "componente no soportado: #{class_name} (#{count})"
+      warn "unsupported component: #{class_name} (#{count})"
     end
   end
 
@@ -164,7 +164,7 @@ class GameModuleImporter
     type, state = @expander.expand(command.type, command.state)
     { type:, state:, traits: Vassal::Piece.parse_traits(type, state) }
   rescue Vassal::ParseError => e
-    warn "ficha ilegible #{slot.name.inspect} (gpid #{slot.gpid}): #{e.message}"
+    warn "unreadable piece #{slot.name.inspect} (gpid #{slot.gpid}): #{e.message}"
     nil
   end
 
@@ -174,7 +174,7 @@ class GameModuleImporter
     return if stacks.empty?
 
     scenario = @game_module.scenarios.create!(
-      name: @empty_setup&.name.presence || "Despliegue del módulo",
+      name: @empty_setup&.name.presence || I18n.t("scenarios.module_setup_name"),
       kind: "module_setup", status: "ready"
     )
     now = Time.current
@@ -215,7 +215,7 @@ class GameModuleImporter
     if @setups_by_file.any?
       wanted = @setups_by_file.keys.to_set
       (wanted - paths.map { |p| File.basename(p) }).each do |file|
-        warn "escenario referenciado sin fichero: #{file}"
+        warn "scenario referenced without a file: #{file}"
       end
       paths = paths.select { |path| wanted.include?(File.basename(path)) }
     end

@@ -1,31 +1,189 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  nav:
+    games: "Games"
+    upload_module: "Upload module"
+    sign_in: "Sign in"
+    sign_out: "Sign out"
+    create_account: "Create account"
+
+  flash:
+    game_created: "Game created."
+    joined_as: "You joined as %{side}."
+    account_created: "Account created, welcome!"
+    try_again_later: "Try again later."
+    invalid_credentials: "Try another email address or password."
+    module_uploaded: "Module uploaded; importing in the background."
+    module_deleted: "Module deleted."
+    module_reimporting: "Reimporting module."
+    reset_sent: "Password reset instructions sent (if user with that email address exists)."
+    password_was_reset: "Password has been reset."
+    passwords_mismatch: "Passwords did not match."
+    reset_link_invalid: "Password reset link is invalid or has expired."
+
+  auth:
+    email: "Email"
+    email_placeholder: "Enter your email address"
+    password: "Password"
+    password_placeholder: "Enter your password"
+    new_password_placeholder: "Enter new password"
+    repeat_password_placeholder: "Repeat new password"
+    repeat_password: "Repeat the password"
+    forgot_password: "Forgot password?"
+    forgot_password_title: "Forgot your password?"
+    email_reset_instructions: "Email reset instructions"
+    update_password: "Update your password"
+    save: "Save"
+    already_have_account: "Already have an account? Sign in"
+    reset_body: "You can reset your password on"
+    reset_link_text: "this password reset page"
+    reset_expiry: "This link will expire in %{time}."
+
+  modules:
+    title: "Modules"
+    none_yet: "No modules uploaded yet."
+    upload_first: "Upload the first module"
+    version_abbr: "version"
+    status:
+      extracting: "extracting"
+      parsing: "parsing"
+      ready: "ready"
+      failed: "failed"
+    progress:
+      extracting_archive: "Extracting archive…"
+      reading_metadata: "Reading metadata…"
+      parsing_module: "Parsing module…"
+    maps_and_boards: "Maps and boards"
+    hand_of: "hand of %{side}"
+    grid: "grid:"
+    decks_no_board: "%{count} decks, no board"
+    pieces: "Pieces"
+    pieces_palette: "Piece palette"
+    pieces_count:
+      one: "%{count} piece"
+      other: "%{count} pieces"
+    cards_in_decks: ", %{cards} cards in %{decks} decks"
+    charts: "Charts"
+    charts_link: "Charts and play aids"
+    charts_count:
+      one: "%{count} chart"
+      other: "%{count} charts"
+    scenarios: "Scenarios"
+    defined_in_module: "defined in the module"
+    no_scenarios: "The module has no scenarios."
+    warnings_summary: "Unsupported components and warnings (%{count})"
+    reimport: "Reimport"
+    delete: "Delete"
+    confirm_delete: "Delete the module and all its data?"
+    upload_title: "Upload VASSAL module"
+    package_label: ".vmod file"
+    upload_submit: "Upload and import"
+
+  charts:
+    title: "Charts"
+    heading: "Charts and play aids"
+    none: "This module has no reference charts."
+    chart_n: "Chart %{n}"
+    loading: "Loading charts…"
+
+  viewer:
+    grid: "Grid"
+    numbering: "Numbers"
+    fit: "Fit"
+
+  palette:
+    title: "Palette"
+    heading: "Piece palette"
+    none: "This module defines no piece palette (pieces may come placed in its scenarios)."
+    pieces_group: "Pieces"
+    flip: "flip"
+    deck: "Deck: %{name}"
+    deck_meta: "%{count} cards · %{map}"
+
+  scenarios:
+    heading: "Scenarios — %{name}"
+    pieces_count:
+      one: "%{count} piece"
+      other: "%{count} pieces"
+    create_game: "Create game"
+    none_ready: "The module has no ready scenarios."
+    no_known_boards: "This scenario has no pieces on known boards (%{count} pieces, %{unresolved} unresolved)."
+    unplaced: "%{count} unplaced"
+    module_setup_name: "Module setup"
+
+  games:
+    title: "Games"
+    back: "← Games"
+    free_sides:
+      one: "%{count} free side"
+      other: "%{count} free sides"
+    full: "full"
+    none_yet: "No games yet. Create one from a module page by picking a scenario."
+    create: "Create game"
+    pick_first: "Pick the game first, then the scenario:"
+    scenarios_count:
+      one: "%{count} scenario"
+      other: "%{count} scenarios"
+    no_ready_modules: "No modules with ready scenarios yet."
+    new_title: "New game"
+    scenario_lead: "%{module} — scenario %{scenario}"
+    name_label: "Game name"
+    side_label: "Your side"
+    no_known_boards: "The game has no pieces on known boards."
+    join_as: "Join as %{side}"
+    spectator: "(spectator)"
+    you: " (you)"
+    cards:
+      one: "%{count} card"
+      other: "%{count} cards"
+    close: "close"
+
+  table:
+    charts: "Charts"
+    log: "Log"
+    chat_placeholder: "Write a message…"
+    send: "Send"
+    flip: "Flip"
+    rotate: "Rotate"
+    discard: "Discard"
+    draw: "Draw"
+    shuffle: "Shuffle"
+    reshuffle: "Reshuffle"
+    hand_close: "✕ Hand"
+    hand_hide: "Hide the hand"
+    hand_open: "🂠 My hand"
+    image_dice:
+      one: "%{count} image die"
+      other: "%{count} image dice"
+    layer: "Layer"
+    move_to_map: "Move to another map"
+    placement_hint: "Place the piece: click on the map · Esc to cancel"
+    cancel: "Cancel"
+    toggle: "toggle"
+    prev_level: "previous level"
+    next_level: "next level"
+
+  game_log:
+    draws_one: "%{side} draws 1 card from %{deck}"
+    draws: "%{by} draws %{card} from %{deck}"
+    a_card: "a card"
+    a_piece: "a piece"
+    shuffles: "%{by} shuffles %{deck}"
+    reshuffles: "%{by} reshuffles %{deck} into %{target}"
+    plays: "%{by} plays %{card}"
+    discards: "%{by} discards %{card} into %{deck}"
+    relocates: "%{piece}: %{from} → %{to}"
+
+  activerecord:
+    errors:
+      models:
+        player:
+          attributes:
+            user_id:
+              already_in_game: "is already in the game"
+            side:
+              taken_in_game: "is already taken"
+              not_in_module: "doesn't exist in this module"
+        game:
+          attributes:
+            scenario:
+              not_ready: "is not ready"

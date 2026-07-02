@@ -1,5 +1,5 @@
-<h1>Nueva partida</h1>
-<p class="muted"><%= @scenario.game_module.name %> — escenario <%= @scenario.name %></p>
+<h1><%= t("games.new_title") %></h1>
+<p class="muted"><%= t("games.scenario_lead", module: @scenario.game_module.name, scenario: @scenario.name) %></p>
 
 <%= form_with model: @game, url: games_path do |form| %>
   <% if @game.errors.any? %>
@@ -12,12 +12,12 @@
 
   <%= form.hidden_field :scenario_id, value: @scenario.id %>
   <p>
-    <%= form.label :name, "Nombre de la partida" %><br>
+    <%= form.label :name, t("games.name_label") %><br>
     <%= form.text_field :name, required: true, size: 50 %>
   </p>
   <p>
-    <%= form.label :side, "Tu bando" %><br>
+    <%= form.label :side, t("games.side_label") %><br>
     <%= form.select :side, @game.game_module.sides %>
   </p>
-  <p><%= form.submit "Crear partida" %></p>
+  <p><%= form.submit t("games.create") %></p>
 <% end %>

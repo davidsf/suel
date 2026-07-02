@@ -26,16 +26,16 @@
   <body>
     <header class="site">
       <%= link_to "Suel", root_path %>
-      <%= link_to "Partidas", games_path, style: "font-weight: 400; opacity: 0.85" %>
+      <%= link_to t("nav.games"), games_path, style: "font-weight: 400; opacity: 0.85" %>
       <div class="actions">
         <% if Current.user&.admin? %>
-          <%= link_to "Subir módulo", new_admin_game_module_path %>
+          <%= link_to t("nav.upload_module"), new_admin_game_module_path %>
         <% end %>
         <% if authenticated? %>
-          <%= button_to "Salir", session_path, method: :delete, form: { style: "display:inline" } %>
+          <%= button_to t("nav.sign_out"), session_path, method: :delete, form: { style: "display:inline" } %>
         <% else %>
-          <%= link_to "Entrar", new_session_path %>
-          <%= link_to "Crear cuenta", new_registration_path %>
+          <%= link_to t("nav.sign_in"), new_session_path %>
+          <%= link_to t("nav.create_account"), new_registration_path %>
         <% end %>
       </div>
     </header>

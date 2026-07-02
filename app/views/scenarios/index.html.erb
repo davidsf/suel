@@ -1,5 +1,5 @@
 <%= turbo_frame_tag "scenario-picker" do %>
-  <h2>Escenarios — <%= @game_module.name || @game_module.slug %></h2>
+  <h2><%= t("scenarios.heading", name: @game_module.name || @game_module.slug) %></h2>
   <% if @scenarios.any? %>
     <% @scenarios.group_by { |s| s.category.presence }.each do |category, scenarios| %>
       <% if category %><h3 class="muted"><%= category %></h3><% end %>
@@ -7,10 +7,10 @@
         <% scenarios.each do |scenario| %>
           <tr>
             <td><%= scenario.name %></td>
-            <td class="muted"><%= scenario.scenario_pieces.count %> fichas</td>
+            <td class="muted"><%= t("scenarios.pieces_count", count: scenario.scenario_pieces.count) %></td>
             <td>
               <% if authenticated? %>
-                <%= link_to "Crear partida", new_game_path(scenario_id: scenario.id),
+                <%= link_to t("scenarios.create_game"), new_game_path(scenario_id: scenario.id),
                       data: { turbo_frame: "_top" } %>
               <% end %>
             </td>
@@ -19,6 +19,6 @@
       </table>
     <% end %>
   <% else %>
-    <p class="muted">El módulo no incluye escenarios listos.</p>
+    <p class="muted"><%= t("scenarios.none_ready") %></p>
   <% end %>
 <% end %>

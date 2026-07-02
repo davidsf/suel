@@ -27,7 +27,7 @@ class GamesController < ApplicationController
       @game.materialize_decks!
       @game.players.create!(user: Current.user, side: side)
     end
-    redirect_to @game, notice: "Partida creada."
+    redirect_to @game, notice: t("flash.game_created")
   rescue ActiveRecord::RecordInvalid => e
     @game.errors.merge!(e.record.errors) unless e.record == @game
     render :new, status: :unprocessable_entity

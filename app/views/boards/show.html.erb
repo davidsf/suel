@@ -4,7 +4,7 @@
 <% toolbar = capture do %>
   <%= link_to "← #{@game_module.name}", game_module_path(@game_module) %>
   <strong><%= @board.name.presence || @game_map.name %></strong>
-  <span class="muted"><%= @game_map.name %><%= " · mano de #{@game_map.side}" if @game_map.kind_player_hand? %></span>
+  <span class="muted"><%= @game_map.name %><%= " · #{t('modules.hand_of', side: @game_map.side)}" if @game_map.kind_player_hand? %></span>
 <% end %>
 
 <%= render layout: "boards/viewer",
