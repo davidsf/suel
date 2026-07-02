@@ -6,12 +6,11 @@ import { Turbo } from "@hotwired/turbo-rails"
 // with pan_zoom: spectators' pointer events fall through to panning; players
 // dragging a piece stop propagation so the board doesn't pan underneath.
 export default class extends Controller {
-  static values = { playable: Boolean, snapUrl: String, map: Number, maps: Array, relocateUrlTemplate: String,
-                    i18n: Object }
+  static values = { playable: Boolean, snapUrl: String, map: Number, maps: Array, decks: Array,
+                    relocateUrlTemplate: String, i18n: Object }
   static targets = ["toolbar", "pieceName", "flipButton", "rotateRow", "rotateLeft", "rotateRight", "layerButtons",
                     "deckToolbar", "deckName", "drawButton", "reshuffleButton",
-                    "handToolbar", "handCardName", "discardDeck",
-                    "pieceDiscardDeck", "pieceDiscardButton", "handTray", "handOpen", "chartsDialog"]
+                    "handTray", "handOpen", "chartsDialog"]
 
   connect() {
     this.selectedId = null
@@ -157,10 +156,10 @@ export default class extends Controller {
       piece.removeEventListener("pointercancel", onUp)
       this.hideGhost()
       if (drag.moved) {
-        this.patch(piece.dataset.moveUrl, {
-          x: Math.round(parseFloat(piece.style.left)),
-          y: Math.round(parseFloat(piece.style.top))
-        })
+        const world = { x: Math.round(parseFloat(piece.style.left)), y: Math.round(parseFloat(piece.style.top)) }
+        const deck = this.deckAt(world)
+        if (deck) this.patch(piece.dataset.discardUrl, { deck: deck.dataset.deckId })
+        else this.patch(piece.dataset.moveUrl, { x: world.x, y: world.y })
       } else {
         this.pieceClicked(piece)
       }
@@ -225,9 +224,9 @@ export default class extends Controller {
 
       if (drag.moved) {
         const world = this.screenToWorld(e.clientX, e.clientY)
-        if (world) this.patch(card.dataset.playUrl, { map: this.mapValue, x: world.x, y: world.y })
-      } else {
-        this.selectHandCard(card)
+        const deck = this.deckAt(world)
+        if (deck) this.patch(card.dataset.discardUrl, { deck: deck.dataset.deckId })
+        else if (world) this.patch(card.dataset.playUrl, { map: this.mapValue, x: world.x, y: world.y })
       }
     }
 
@@ -252,7 +251,6 @@ export default class extends Controller {
   closeTray() {
     this.handTrayTarget.hidden = true
     this.handOpenTarget.hidden = false
-    if (this.hasHandToolbarTarget) this.handToolbarTarget.hidden = true
   }
 
   openTray() {
@@ -260,20 +258,16 @@ export default class extends Controller {
     this.handOpenTarget.hidden = true
   }
 
-  selectHandCard(card) {
-    this.selectedHandCard = card
-    this.handCardNameTarget.textContent = card.dataset.name
-    this.positionToolbar(this.handToolbarTarget, card)
-  }
-
-  discardHandCard() {
-    const card = this.selectedHandCard
-    const deck = this.discardDeckTarget.value
-    if (card && deck) {
-      this.send(card.dataset.discardUrl, "PATCH", { deck })
-      this.handToolbarTarget.hidden = true
-      this.selectedHandCard = null
-    }
+  // The actionable deck marker (on the board, not the tray) whose footprint
+  // contains the world point — VASSAL adds a dragged piece to a deck it is
+  // dropped on (PieceMover.visitDeck). Markers are centred on left/top.
+  deckAt(world) {
+    if (!world) return null
+    return [...this.element.querySelectorAll(".world .deck-marker.actionable")].find(marker => {
+      const dx = Math.abs(world.x - parseFloat(marker.style.left))
+      const dy = Math.abs(world.y - parseFloat(marker.style.top))
+      return dx <= marker.offsetWidth / 2 && dy <= marker.offsetHeight / 2
+    }) || null
   }
 
   // --- snap ghost ----------------------------------------------------------
@@ -469,8 +463,14 @@ export default class extends Controller {
 
     // VASSAL key commands (Reveal, Send to..., etc.) as clickable rows. The
     // server runs the command and broadcasts every affected piece, so we just
-    // fire and let the menu close.
+    // fire and let the menu close. A ReturnToDeck that prompts for the
+    // destination (VASSAL's deck-selection dialog) becomes a deck submenu.
     JSON.parse(piece.dataset.commands || "[]").forEach((command) => {
+      if (command.prompt_deck) {
+        if (this.decksValue.length > 0)
+          this.appendSubmenu(command.label, this.decksValue, deck => this.runCommand(command.key, deck.id))
+        return
+      }
       const row = document.createElement("button")
       row.type = "button"
       row.className = "menu-row clickable"
@@ -481,46 +481,55 @@ export default class extends Controller {
     })
 
     // "Move to another map" — the web equivalent of dragging a piece between
-    // VASSAL's separate map windows. A collapsible submenu (modules like
-    // Holland '44 have many maps, so a flat list would swamp the menu); choosing
-    // one navigates there in placement mode (carry the piece, click to drop).
+    // VASSAL's separate map windows; choosing one navigates there in placement
+    // mode (carry the piece, click to drop).
     if (this.mapsValue.length > 0) {
-      const submenu = document.createElement("div")
-      submenu.className = "menu-submenu"
-      submenu.hidden = !this.mapMenuExpanded
-      this.mapsValue.forEach((map) => {
-        const row = document.createElement("button")
-        row.type = "button"
-        row.className = "menu-row clickable"
-        row.append(this.menuLabel(map.name))
-        row.addEventListener("click", () => this.moveToMap(map, piece))
-        submenu.appendChild(row)
-      })
-
-      const toggle = document.createElement("button")
-      toggle.type = "button"
-      toggle.className = "menu-row clickable"
-      const caret = this.menuState(this.mapMenuExpanded ? "▾" : "▸")
-      toggle.append(this.menuLabel(this.i18nValue.move_to_map), caret)
-      toggle.addEventListener("click", () => {
-        this.mapMenuExpanded = !this.mapMenuExpanded
-        submenu.hidden = !this.mapMenuExpanded
-        caret.textContent = this.mapMenuExpanded ? "▾" : "▸"
-        // Re-clamp: expanding grows the menu and it may need to flip above.
-        this.positionToolbar(this.toolbarTarget, this.selectedPiece() || piece)
-      })
-
-      this.layerButtonsTarget.appendChild(toggle)
-      this.layerButtonsTarget.appendChild(submenu)
+      this.appendSubmenu(this.i18nValue.move_to_map, this.mapsValue, map => this.moveToMap(map, piece))
     }
 
     this.positionToolbar(this.toolbarTarget, piece)
   }
 
-  runCommand(key) {
+  // A collapsible "label ▸" menu row revealing one button per item ({name}).
+  // Expansion is remembered per label across rebuilds (broadcasts re-render an
+  // open menu). Collapsible because modules can have many maps or decks; a
+  // flat list would swamp the menu.
+  appendSubmenu(label, items, onPick) {
+    this.submenuOpen ||= {}
+    const submenu = document.createElement("div")
+    submenu.className = "menu-submenu"
+    submenu.hidden = !this.submenuOpen[label]
+    items.forEach((item) => {
+      const row = document.createElement("button")
+      row.type = "button"
+      row.className = "menu-row clickable"
+      row.append(this.menuLabel(item.name))
+      row.addEventListener("click", () => onPick(item))
+      submenu.appendChild(row)
+    })
+
+    const toggle = document.createElement("button")
+    toggle.type = "button"
+    toggle.className = "menu-row clickable"
+    const caret = this.menuState(this.submenuOpen[label] ? "▾" : "▸")
+    toggle.append(this.menuLabel(label), caret)
+    toggle.addEventListener("click", () => {
+      this.submenuOpen[label] = !this.submenuOpen[label]
+      submenu.hidden = !this.submenuOpen[label]
+      caret.textContent = this.submenuOpen[label] ? "▾" : "▸"
+      // Re-clamp: expanding grows the menu and it may need to flip above.
+      const piece = this.selectedPiece()
+      if (piece) this.positionToolbar(this.toolbarTarget, piece)
+    })
+
+    this.layerButtonsTarget.append(toggle, submenu)
+  }
+
+  runCommand(key, deckId = null) {
     const piece = this.selectedPiece()
     if (!piece) return
-    this.send(piece.dataset.commandUrl, "POST", { command: key })
+    const params = deckId ? { command: key, deck: deckId } : { command: key }
+    this.send(piece.dataset.commandUrl, "POST", params)
     this.hideActionToolbars()
     this.selectedId = null
   }
@@ -652,16 +661,6 @@ export default class extends Controller {
   cycleLayer(index, delta = 1) {
     const piece = this.selectedPiece()
     if (piece) this.patch(piece.dataset.cycleLayerUrl, { index, delta })
-  }
-
-  discardPiece() {
-    const piece = this.selectedPiece()
-    const deck = this.hasPieceDiscardDeckTarget && this.pieceDiscardDeckTarget.value
-    if (piece && deck) {
-      this.send(piece.dataset.discardUrl, "PATCH", { deck })
-      this.toolbarTarget.hidden = true
-      this.selectedId = null
-    }
   }
 
   roll(event) {

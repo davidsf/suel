@@ -144,7 +144,7 @@ a.map-tab:hover { border-color: var(--accent); color: var(--accent); }
 .table-piece:hover { z-index: 99998 !important; }
 /* Action toolbars are placed next to their target by the controller (top/left
    set in JS); they only need to be fixed-positioned floating panels. */
-.piece-toolbar, .deck-toolbar, .hand-card-toolbar {
+.piece-toolbar, .deck-toolbar {
   position: fixed; top: 0; left: 0;
   background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
@@ -256,8 +256,6 @@ a.map-tab:hover { border-color: var(--accent); color: var(--accent); }
   position: fixed; transform: translate(-50%, -50%); opacity: 0.85;
   pointer-events: none; z-index: 100000;
 }
-
-.hand-card-toolbar select, .hand-card-toolbar button { font: inherit; }
 
 /* ---- reference charts ---- */
 .charts { margin-bottom: 1.5rem; }

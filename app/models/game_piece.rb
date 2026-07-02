@@ -61,14 +61,17 @@ class GamePiece < ApplicationRecord
             game_map: game_map, board: board, x:, y:, z_order: next_z(game_map.id), traits:)
   end
 
-  # Right-click menu commands the piece exposes (TriggerAction, SendToLocation
-  # or CounterGlobalKeyCommand traits with menu text). Each is {label, key};
-  # firing key through PieceCommand runs it.
+  # Right-click menu commands the piece exposes (TriggerAction, SendToLocation,
+  # ReturnToDeck... traits with menu text). Each is {label, key}; firing key
+  # through PieceCommand runs it. A ReturnToDeck with deck selection carries
+  # prompt_deck so the client asks which deck before firing.
   def menu_commands
     traits.filter_map do |trait|
-      next unless %w[trigger send_to global_key place_marker replace delete clone].include?(trait["kind"])
+      next unless %w[trigger send_to global_key place_marker replace delete clone return_to_deck].include?(trait["kind"])
       next if trait["command"].blank? || trait["key"].blank?
-      { "label" => trait["command"], "key" => trait["key"] }
+      command = { "label" => trait["command"], "key" => trait["key"] }
+      command["prompt_deck"] = true if trait["kind"] == "return_to_deck" && trait["select"]
+      command
     end
   end
 

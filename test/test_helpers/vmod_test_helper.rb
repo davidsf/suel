@@ -183,6 +183,16 @@ module VmodTestHelper
     ]
   end
 
+  # A piece whose "Discard" menu command is a ReturnToDeck trait: to a fixed
+  # deck-name expression, or prompting the player for one when select.
+  def return_to_deck_traits(deck: nil, select: false)
+    [
+      { "kind" => "return_to_deck", "command" => "Discard", "key" => "key:68,130",
+        "select" => select, "deck" => deck }.compact,
+      { "kind" => "basic", "image" => "board.png", "name" => "Card" }
+    ]
+  end
+
   # A marker carrying VASSAL's lifecycle commands: Remove (Delete), Clone, and
   # "Change status" (Replace into the Status Marker), each a TriggerAction firing
   # a report then the lifecycle keystroke — mirroring Holland '44's markers.

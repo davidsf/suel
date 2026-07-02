@@ -45,6 +45,7 @@
        data-game-table-snap-url-value="<%= snap_game_path(@game) %>"
        data-game-table-map-value="<%= @game_map.id %>"
        data-game-table-maps-value="<%= @destination_maps.map { |m| { id: m.id, name: m.name, url: game_path(@game, map: m.id) } }.to_json %>"
+       data-game-table-decks-value="<%= @all_decks.map { |d| { id: d.id, name: d.name } }.to_json %>"
        data-game-table-relocate-url-template-value="<%= relocate_game_piece_path(@game, "PIECE_ID") %>"
        data-game-table-i18n-value="<%= { move_to_map: t("table.move_to_map"),
                                          placement_hint: t("table.placement_hint"),
@@ -113,16 +114,6 @@
         </span>
       </div>
       <div data-game-table-target="layerButtons"></div>
-      <% if @all_decks.any? %>
-        <div class="menu-row">
-          <select data-game-table-target="pieceDiscardDeck">
-            <% @all_decks.each do |deck| %>
-              <option value="<%= deck.id %>"><%= deck.name %></option>
-            <% end %>
-          </select>
-          <button data-game-table-target="pieceDiscardButton" data-action="game-table#discardPiece"><%= t("table.discard") %></button>
-        </div>
-      <% end %>
     </div>
 
     <% if @player %>
@@ -151,18 +142,6 @@
       </div>
       <button class="hand-tray-open" data-game-table-target="handOpen"
               data-action="game-table#openTray"><%= t("table.hand_open") %></button>
-
-      <% if @all_decks.any? %>
-        <div class="hand-card-toolbar" data-game-table-target="handToolbar" hidden>
-          <span data-game-table-target="handCardName" class="muted"></span>
-          <select data-game-table-target="discardDeck">
-            <% @all_decks.each do |deck| %>
-              <option value="<%= deck.id %>"><%= deck.name %></option>
-            <% end %>
-          </select>
-          <button data-action="game-table#discardHandCard"><%= t("table.discard") %></button>
-        </div>
-      <% end %>
     <% end %>
 
     <% if @game_module.charts? %>

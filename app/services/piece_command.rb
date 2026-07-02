@@ -13,20 +13,21 @@ class PieceCommand
 
   attr_reader :touched, :reports, :placed, :source_decks, :removed
 
-  def initialize(game, by:)
+  def initialize(game, by:, deck_choice: nil)
     @game = game
     @by = by
+    @deck_choice = deck_choice # player's pick for a prompting ReturnToDeck
     @touched = {}       # id => GamePiece, deduped and in first-touched order
     @reports = []       # resolved ReportState messages, in order
     @placed = []        # pieces moved onto a map from elsewhere (deck/hand)
-    @source_decks = []  # decks those pieces came from, for marker refresh
-    @removed = []       # pieces destroyed (Delete/Replace), for removal broadcast
+    @source_decks = []  # decks pieces left or joined, for marker refresh
+    @removed = []       # pieces destroyed or sent off-map, for removal broadcast
   end
 
   # Fires keystroke at piece and returns the dispatcher (touched pieces +
   # reports). keystroke is a canonical NamedKeyStroke (see TraitRegistry).
-  def self.run(piece, keystroke, by:)
-    new(piece.game, by:).tap { |cmd| cmd.fire(piece, keystroke) }
+  def self.run(piece, keystroke, by:, deck_choice: nil)
+    new(piece.game, by:, deck_choice:).tap { |cmd| cmd.fire(piece, keystroke) }
   end
 
   def fire(piece, keystroke, depth = 0)
@@ -37,6 +38,7 @@ class PieceCommand
       when "trigger"      then run_trigger(piece, trait, keystroke, depth)
       when "set_property" then run_set_property(piece, trait, keystroke)
       when "send_to"      then run_send_to(piece, trait, keystroke)
+      when "return_to_deck" then run_return_to_deck(piece, trait, keystroke)
       when "global_key"   then run_global_key(trait, keystroke, depth)
       when "place_marker" then run_place_marker(piece, trait, keystroke)
       when "replace"      then run_replace(piece, trait, keystroke)
@@ -81,6 +83,24 @@ class PieceCommand
       @placed << piece
       @source_decks << from_deck if from_deck
     end
+  end
+
+  # ReturnToDeck: sends the piece back to a DrawPile — the trait's deck (a
+  # $property$-capable name expression) or the player's pick when the trait
+  # prompts for one (no pick = no-op, like cancelling VASSAL's dialog). The
+  # piece leaves the map, so its public node is broadcast-removed and the
+  # destination deck's marker refreshes.
+  def run_return_to_deck(piece, trait, keystroke)
+    return unless trait["key"] == keystroke
+
+    deck = trait["select"] ? @deck_choice : @game.deck_named(resolve(trait["deck"], piece))
+    return unless deck
+
+    from_map = piece.on_map?
+    piece.discard_to!(deck)
+    touch(piece)
+    @removed << piece if from_map
+    @source_decks << deck
   end
 
   def run_global_key(trait, keystroke, depth)
