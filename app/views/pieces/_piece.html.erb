@@ -8,14 +8,28 @@
           alt: basic["name"], loading: "lazy", decoding: "async",
           data: { piece_target: "front" } %>
   <% end %>
-  <% traits.each do |trait| %>
+  <%# Embellishment paints every active level image superimposed at the piece
+      centre (plus the layer's offsets), whether or not the BasicPiece has an
+      image — pieces whose whole artwork comes from layers (EotS) rely on it.
+      Decorators draw inner-piece first, so the INNERMOST layer is the bottom
+      of the stack; our traits list is outermost-first, hence the reverse.
+      The first image rendered is the in-flow base that sizes the piece; the
+      rest overlay it in paint order. %>
+  <% base_rendered = basic["image"].present? %>
+  <% traits.reverse_each do |trait| %>
     <% next unless trait["kind"] == "layer" %>
     <% image = layer_image(trait) %>
     <% next if image.blank? %>
-    <%= image_tag module_image_path(game_module, image),
-          class: basic["image"].present? ? "overlay-layer" : nil,
-          style: (basic["image"].present? ? "transform: translate(calc(-50% + #{trait['x_off'].to_i}px), calc(-50% + #{trait['y_off'].to_i}px))" : nil),
-          alt: "", loading: "lazy", decoding: "async" %>
+    <% if base_rendered %>
+      <%= image_tag module_image_path(game_module, image),
+            class: "overlay-layer",
+            style: "transform: translate(calc(-50% + #{trait['x_off'].to_i}px), calc(-50% + #{trait['y_off'].to_i}px))",
+            alt: "", loading: "lazy", decoding: "async" %>
+    <% else %>
+      <%= image_tag module_image_path(game_module, image),
+            alt: basic["name"], loading: "lazy", decoding: "async" %>
+      <% base_rendered = true %>
+    <% end %>
   <% end %>
   <% piece_labels(traits).each do |label| %>
     <span class="piece-label" style="<%= piece_label_style(label) %>"><%= label["resolved"] %></span>
