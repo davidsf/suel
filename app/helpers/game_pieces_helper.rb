@@ -30,7 +30,7 @@ module GamePiecesHelper
       value = trait["value"].to_i
       shown = value.positive? && images[value - 1].to_s.strip.present?
       level_names = trait["level_names"] || []
-      { name: trait["name"].presence || "Capa",
+      { name: trait["name"].presence || t("table.layer"),
         toggle:,
         active: toggle ? shown : value.positive?,
         level: value.positive? ? value : 0,

@@ -9,39 +9,39 @@
 <% end %>
 
 <% if @game_module.ready? %>
-  <h2>Mapas y tableros</h2>
+  <h2><%= t("modules.maps_and_boards") %></h2>
   <table class="listing">
     <% @game_module.game_maps.each do |game_map| %>
       <% game_map.boards.each do |board| %>
         <tr>
           <td><%= link_to board.name.presence || game_map.name, game_module_board_path(@game_module, board) %></td>
-          <td class="muted"><%= game_map.name %><%= " · mano de #{game_map.side}" if game_map.kind_player_hand? %></td>
+          <td class="muted"><%= game_map.name %><%= " · #{t('modules.hand_of', side: game_map.side)}" if game_map.kind_player_hand? %></td>
           <td class="muted"><%= board.width && "#{board.width}×#{board.height}px" %></td>
-          <td class="muted">rejilla: <%= board.grid_type %></td>
+          <td class="muted"><%= t("modules.grid") %> <%= board.grid_type %></td>
         </tr>
       <% end %>
       <% if game_map.boards.empty? && game_map.decks.any? %>
         <tr>
           <td><%= game_map.name %></td>
-          <td class="muted" colspan="3"><%= game_map.decks.size %> mazos, sin tablero</td>
+          <td class="muted" colspan="3"><%= t("modules.decks_no_board", count: game_map.decks.size) %></td>
         </tr>
       <% end %>
     <% end %>
   </table>
 
-  <h2>Fichas</h2>
+  <h2><%= t("modules.pieces") %></h2>
   <p>
-    <%= link_to "Paleta de fichas", game_module_palette_path(@game_module) %>
-    <span class="muted">(<%= @game_module.piece_definitions.where(deck_id: nil).count %> fichas<% if @game_module.decks.any? %>, <%= @game_module.piece_definitions.where.not(deck_id: nil).count %> cartas en <%= @game_module.decks.count %> mazos<% end %>)</span>
+    <%= link_to t("modules.pieces_palette"), game_module_palette_path(@game_module) %>
+    <span class="muted">(<%= t("modules.pieces_count", count: @game_module.piece_definitions.where(deck_id: nil).count) %><% if @game_module.decks.any? %><%= t("modules.cards_in_decks", cards: @game_module.piece_definitions.where.not(deck_id: nil).count, decks: @game_module.decks.count) %><% end %>)</span>
   </p>
 
   <% if @game_module.charts? %>
-    <h2>Tablas</h2>
-    <p><%= link_to "Tablas y ayudas", game_module_charts_path(@game_module) %>
-      <span class="muted">(<%= @game_module.charts.sum { |w| (w["charts"] || []).size } %> tablas)</span></p>
+    <h2><%= t("modules.charts") %></h2>
+    <p><%= link_to t("modules.charts_link"), game_module_charts_path(@game_module) %>
+      <span class="muted">(<%= t("modules.charts_count", count: @game_module.charts.sum { |w| (w["charts"] || []).size }) %>)</span></p>
   <% end %>
 
-  <h2>Escenarios</h2>
+  <h2><%= t("modules.scenarios") %></h2>
   <% if @scenarios.any? %>
     <% @scenarios.group_by { |s| s.category.presence }.each do |category, scenarios| %>
       <% if category %><h3 class="muted"><%= category %></h3><% end %>
@@ -55,12 +55,12 @@
                 <%= scenario.name %>
               <% end %>
             </td>
-            <td class="muted"><%= scenario.module_setup? ? "definido en el módulo" : scenario.source_filename %></td>
-            <td class="muted"><%= scenario.scenario_pieces.count %> fichas</td>
-            <td><span class="status-pill <%= scenario.status %>"><%= scenario.status %></span></td>
+            <td class="muted"><%= scenario.module_setup? ? t("modules.defined_in_module") : scenario.source_filename %></td>
+            <td class="muted"><%= t("scenarios.pieces_count", count: scenario.scenario_pieces.count) %></td>
+            <td><span class="status-pill <%= scenario.status %>"><%= t("modules.status.#{scenario.status}", default: scenario.status) %></span></td>
             <td>
               <% if scenario.ready? && authenticated? %>
-                <%= link_to "Crear partida", new_game_path(scenario_id: scenario.id) %>
+                <%= link_to t("scenarios.create_game"), new_game_path(scenario_id: scenario.id) %>
               <% end %>
             </td>
           </tr>
@@ -68,12 +68,12 @@
       </table>
     <% end %>
   <% else %>
-    <p class="muted">El módulo no incluye escenarios.</p>
+    <p class="muted"><%= t("modules.no_scenarios") %></p>
   <% end %>
 
   <% if @game_module.parse_warnings.any? %>
     <details class="box">
-      <summary>Componentes no soportados y avisos (<%= @game_module.parse_warnings.size %>)</summary>
+      <summary><%= t("modules.warnings_summary", count: @game_module.parse_warnings.size) %></summary>
       <ul class="warning-list">
         <% @game_module.parse_warnings.each do |warning| %>
           <li><%= warning %></li>
@@ -85,9 +85,9 @@
 
 <% if Current.user&.admin? %>
   <p>
-    <%= button_to "Reimportar", reimport_admin_game_module_path(@game_module), method: :post, form: { style: "display:inline" } %>
-    <%= button_to "Eliminar", admin_game_module_path(@game_module), method: :delete,
+    <%= button_to t("modules.reimport"), reimport_admin_game_module_path(@game_module), method: :post, form: { style: "display:inline" } %>
+    <%= button_to t("modules.delete"), admin_game_module_path(@game_module), method: :delete,
           form: { style: "display:inline" },
-          data: { turbo_confirm: "¿Eliminar el módulo y todos sus datos?" } %>
+          data: { turbo_confirm: t("modules.confirm_delete") } %>
   </p>
 <% end %>

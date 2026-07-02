@@ -1,4 +1,4 @@
-<h1>Módulos</h1>
+<h1><%= t("modules.title") %></h1>
 
 <% if @game_modules.any? %>
   <div class="cards">
@@ -15,7 +15,7 @@
         <div class="body">
           <%= link_to game_module.name || game_module.slug, game_module_path(game_module) %>
           <div class="meta">
-            <span class="status-pill <%= game_module.status %>"><%= game_module.status %></span>
+            <span class="status-pill <%= game_module.status %>"><%= t("modules.status.#{game_module.status}", default: game_module.status) %></span>
             <% if game_module.version.present? %>v<%= game_module.version %><% end %>
           </div>
         </div>
@@ -23,8 +23,8 @@
     <% end %>
   </div>
 <% else %>
-  <p>Todavía no hay módulos cargados.</p>
+  <p><%= t("modules.none_yet") %></p>
   <% if Current.user&.admin? %>
-    <p><%= link_to "Subir el primer módulo", new_admin_game_module_path %></p>
+    <p><%= link_to t("modules.upload_first"), new_admin_game_module_path %></p>
   <% end %>
 <% end %>

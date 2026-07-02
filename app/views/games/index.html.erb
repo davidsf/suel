@@ -1,4 +1,4 @@
-<h1>Partidas</h1>
+<h1><%= t("games.title") %></h1>
 
 <% if @games.any? %>
   <table class="listing">
@@ -7,18 +7,18 @@
         <td><%= link_to game.name, game %></td>
         <td class="muted"><%= game.game_module.name %> · <%= game.scenario.name %></td>
         <td class="muted"><%= game.players.map { |p| "#{p.side}: #{p.user.email_address}" }.join(" · ") %></td>
-        <td class="muted"><%= game.free_sides.any? ? "#{game.free_sides.size} bandos libres" : "completa" %></td>
+        <td class="muted"><%= game.free_sides.any? ? t("games.free_sides", count: game.free_sides.size) : t("games.full") %></td>
       </tr>
     <% end %>
   </table>
 <% else %>
-  <p class="muted">No hay partidas todavía. Crea una desde la página de un módulo, eligiendo escenario.</p>
+  <p class="muted"><%= t("games.none_yet") %></p>
 <% end %>
 
-<h2>Crear partida</h2>
+<h2><%= t("games.create") %></h2>
 <% if @modules.any? %>
   <div data-controller="scenario-picker">
-    <p class="muted">Elige primero el juego y luego el escenario:</p>
+    <p class="muted"><%= t("games.pick_first") %></p>
     <div class="cards">
       <% @modules.each do |game_module| %>
         <%= link_to game_module_scenarios_path(game_module), class: "card",
@@ -27,7 +27,7 @@
           <div class="thumb"<%= " style=\"background-image: url('#{cover}')\"".html_safe if cover %>></div>
           <div class="body">
             <%= game_module.name || game_module.slug %>
-            <div class="meta"><%= game_module.scenarios.ready.size %> escenarios</div>
+            <div class="meta"><%= t("games.scenarios_count", count: game_module.scenarios.ready.size) %></div>
           </div>
         <% end %>
       <% end %>
@@ -35,11 +35,11 @@
 
     <dialog class="scenario-dialog" data-scenario-picker-target="dialog"
             data-action="click->scenario-picker#backdropClose">
-      <form method="dialog"><button class="charts-close" value="cerrar">✕</button></form>
+      <form method="dialog"><button class="charts-close" value="<%= t("games.close") %>">✕</button></form>
       <%= turbo_frame_tag "scenario-picker",
             data: { action: "turbo:frame-load->scenario-picker#open" } %>
     </dialog>
   </div>
 <% else %>
-  <p class="muted">No hay módulos con escenarios listos todavía.</p>
+  <p class="muted"><%= t("games.no_ready_modules") %></p>
 <% end %>

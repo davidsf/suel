@@ -47,7 +47,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     post game_players_path(game, side: "Bando A")
     follow_redirect!
-    assert_match "ocupado", flash[:alert].to_s
+    assert_match "already taken", flash[:alert].to_s
 
     post game_players_path(game, side: "Bando B")
     assert_equal "Bando B", game.players.find_by(user: users(:two)).side

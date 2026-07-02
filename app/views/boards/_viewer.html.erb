@@ -9,14 +9,14 @@
     <%= toolbar %>
     <span class="spacer"></span>
     <% if layout.any? { |e| e.board.grid.present? } %>
-      <button data-action="board#toggleGrid">Rejilla</button>
+      <button data-action="board#toggleGrid"><%= t("viewer.grid") %></button>
       <% if layout.any? { |e| e.board.numbering? } %>
-        <button data-action="board#toggleNumbering">Números</button>
+        <button data-action="board#toggleNumbering"><%= t("viewer.numbering") %></button>
       <% end %>
     <% end %>
     <button data-action="pan-zoom#zoomOut">−</button>
     <button data-action="pan-zoom#zoomIn">+</button>
-    <button data-action="pan-zoom#fit">Ajustar</button>
+    <button data-action="pan-zoom#fit"><%= t("viewer.fit") %></button>
   </div>
   <div class="viewer" data-pan-zoom-target="viewport"
        data-action="wheel->pan-zoom#wheel pointerdown->pan-zoom#pointerDown

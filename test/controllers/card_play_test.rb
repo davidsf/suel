@@ -37,7 +37,7 @@ class CardPlayTest < ActionDispatch::IntegrationTest
     mask = @card.traits.find { |t| t["kind"] == "mask" }
     assert_nil mask["obscured_by"], "played cards land face up"
     assert_equal "deck", GameEvent.last.kind
-    assert_match(/juega/, GameEvent.last.body)
+    assert_match(/plays/, GameEvent.last.body)
   end
 
   test "another side cannot play my hand card" do

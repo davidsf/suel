@@ -1,14 +1,14 @@
 <% content_for :title, "#{@game.name}" %>
 
 <% if @layout.empty? %>
-  <p><%= link_to "← Partidas", games_path %></p>
+  <p><%= link_to t("games.back"), games_path %></p>
   <h1><%= @game.name %></h1>
-  <p class="muted">La partida no tiene fichas sobre tableros conocidos.</p>
+  <p class="muted"><%= t("games.no_known_boards") %></p>
 <% else %>
   <% content_for :main_class, "full" %>
 
   <% toolbar = capture do %>
-    <%= link_to "← Partidas", games_path %>
+    <%= link_to t("games.back"), games_path %>
     <strong><%= @game.name %></strong>
     <% if @maps.size > 1 %>
       <span class="muted">
@@ -23,19 +23,19 @@
     <% end %>
     <span class="muted">
       <% @game.players.each do |player| %>
-        <%= player.side %>: <%= player.user.email_address.split("@").first %><%= " (tú)" if player == @player %>
+        <%= player.side %>: <%= player.user.email_address.split("@").first %><%= t("games.you") if player == @player %>
         (<%= render "games/hand_count", game: @game, side: player.side %>) ·
       <% end %>
     </span>
     <% if @player.nil? %>
       <% @game.free_sides.each do |side| %>
-        <%= button_to "Unirse como #{side}", game_players_path(@game, side: side),
+        <%= button_to t("games.join_as", side: side), game_players_path(@game, side: side),
               method: :post, form: { style: "display:inline" } %>
       <% end %>
-      <% if @game.free_sides.empty? %><span class="muted">(espectador)</span><% end %>
+      <% if @game.free_sides.empty? %><span class="muted"><%= t("games.spectator") %></span><% end %>
     <% end %>
     <% if @game_module.charts? %>
-      <button type="button" data-action="game-table#openCharts">Tablas</button>
+      <button type="button" data-action="game-table#openCharts"><%= t("table.charts") %></button>
     <% end %>
   <% end %>
 
@@ -45,7 +45,13 @@
        data-game-table-snap-url-value="<%= snap_game_path(@game) %>"
        data-game-table-map-value="<%= @game_map.id %>"
        data-game-table-maps-value="<%= @destination_maps.map { |m| { id: m.id, name: m.name, url: game_path(@game, map: m.id) } }.to_json %>"
-       data-game-table-relocate-url-template-value="<%= relocate_game_piece_path(@game, "PIECE_ID") %>">
+       data-game-table-relocate-url-template-value="<%= relocate_game_piece_path(@game, "PIECE_ID") %>"
+       data-game-table-i18n-value="<%= { move_to_map: t("table.move_to_map"),
+                                         placement_hint: t("table.placement_hint"),
+                                         cancel: t("table.cancel"),
+                                         toggle: t("table.toggle"),
+                                         prev_level: t("table.prev_level"),
+                                         next_level: t("table.next_level") }.to_json %>">
     <%= turbo_stream_from @game %>
     <%= turbo_stream_from @game, @player.side if @player %>
 
@@ -73,7 +79,7 @@
         <% @special_dice.each_with_index do |button, index| %>
           <button data-action="game-table#roll"
                   data-game-table-url-param="<%= game_rolls_path(@game, special: index) %>"
-                  title="<%= button['dice'].size %> dado(s) de imagen">
+                  title="<%= t("table.image_dice", count: button['dice'].size) %>">
             🎲 <%= button["label"] %>
           </button>
         <% end %>
@@ -81,7 +87,7 @@
     <% end %>
 
     <details class="game-log" open>
-      <summary>Registro</summary>
+      <summary><%= t("table.log") %></summary>
       <div id="game_log" class="log-entries">
         <% @events.each do |event| %>
           <%= render "game_events/game_event", game_event: event %>
@@ -89,18 +95,18 @@
       </div>
       <%= form_with url: game_messages_path(@game), method: :post, class: "chat-form",
             data: { controller: "reset-form", action: "turbo:submit-end->reset-form#reset" } do |form| %>
-        <%# size: nil — Rails copia maxlength a size, y size=500 desborda el panel %>
-        <%= form.text_field :body, placeholder: "Escribe un mensaje…", maxlength: 500, size: nil,
+        <%# size: nil — Rails copies maxlength into size, and size=500 overflows the panel %>
+        <%= form.text_field :body, placeholder: t("table.chat_placeholder"), maxlength: 500, size: nil,
               autocomplete: "off", required: true %>
-        <%= form.submit "Enviar" %>
+        <%= form.submit t("table.send") %>
       <% end %>
     </details>
 
     <div class="piece-toolbar piece-menu" data-game-table-target="toolbar" hidden>
       <span data-game-table-target="pieceName" class="menu-title"></span>
-      <button class="menu-row clickable" data-game-table-target="flipButton" data-action="game-table#flip">Voltear</button>
+      <button class="menu-row clickable" data-game-table-target="flipButton" data-action="game-table#flip"><%= t("table.flip") %></button>
       <div class="menu-row" data-game-table-target="rotateRow">
-        <span class="menu-label">Girar</span>
+        <span class="menu-label"><%= t("table.rotate") %></span>
         <span class="menu-stepper">
           <button data-game-table-target="rotateLeft" data-action="game-table#rotateLeft">⟲</button>
           <button data-game-table-target="rotateRight" data-action="game-table#rotateRight">⟳</button>
@@ -114,7 +120,7 @@
               <option value="<%= deck.id %>"><%= deck.name %></option>
             <% end %>
           </select>
-          <button data-game-table-target="pieceDiscardButton" data-action="game-table#discardPiece">Descartar</button>
+          <button data-game-table-target="pieceDiscardButton" data-action="game-table#discardPiece"><%= t("table.discard") %></button>
         </div>
       <% end %>
     </div>
@@ -122,14 +128,14 @@
     <% if @player %>
       <div class="deck-toolbar" data-game-table-target="deckToolbar" hidden>
         <span data-game-table-target="deckName" class="muted"></span>
-        <button data-game-table-target="drawButton" data-action="game-table#draw">Robar</button>
-        <button data-action="game-table#shuffleDeck">Barajar</button>
-        <button data-game-table-target="reshuffleButton" data-action="game-table#reshuffleDeck">Rebarajar</button>
+        <button data-game-table-target="drawButton" data-action="game-table#draw"><%= t("table.draw") %></button>
+        <button data-action="game-table#shuffleDeck"><%= t("table.shuffle") %></button>
+        <button data-game-table-target="reshuffleButton" data-action="game-table#reshuffleDeck"><%= t("table.reshuffle") %></button>
       </div>
 
       <%# The tray starts collapsed; players open it from the "Mi mano" tab. %>
       <div class="hand-tray" data-game-table-target="handTray" hidden>
-        <button class="hand-tray-close" data-action="game-table#closeTray" title="Ocultar la mano">✕ Mano</button>
+        <button class="hand-tray-close" data-action="game-table#closeTray" title="<%= t("table.hand_hide") %>"><%= t("table.hand_close") %></button>
         <% if @hand_decks.any? %>
           <div class="hand-decks">
             <% @hand_decks.each do |deck| %>
@@ -144,7 +150,7 @@
         </div>
       </div>
       <button class="hand-tray-open" data-game-table-target="handOpen"
-              data-action="game-table#openTray">🂠 Mi mano</button>
+              data-action="game-table#openTray"><%= t("table.hand_open") %></button>
 
       <% if @all_decks.any? %>
         <div class="hand-card-toolbar" data-game-table-target="handToolbar" hidden>
@@ -154,16 +160,16 @@
               <option value="<%= deck.id %>"><%= deck.name %></option>
             <% end %>
           </select>
-          <button data-action="game-table#discardHandCard">Descartar</button>
+          <button data-action="game-table#discardHandCard"><%= t("table.discard") %></button>
         </div>
       <% end %>
     <% end %>
 
     <% if @game_module.charts? %>
       <dialog class="charts-dialog" data-game-table-target="chartsDialog">
-        <form method="dialog"><button class="charts-close" value="cerrar">✕</button></form>
+        <form method="dialog"><button class="charts-close" value="<%= t("games.close") %>">✕</button></form>
         <turbo-frame id="charts_frame" src="<%= game_module_charts_path(@game_module, frame: 1) %>" loading="lazy">
-          <p class="muted">Cargando tablas…</p>
+          <p class="muted"><%= t("charts.loading") %></p>
         </turbo-frame>
       </dialog>
     <% end %>

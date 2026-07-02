@@ -114,5 +114,9 @@ selection), which is how snapping and location names work.
   `Current`, `Session`); module upload/management is admin-only under `Admin::`.
 - The VASSAL reader has no Rails dependencies — keep it that way; it's plain Ruby
   under `lib/vassal/` and tested under `test/lib/vassal/`.
-- User-facing strings are Spanish (the app's primary audience); code and comments
-  are English.
+- User-facing strings go through Rails i18n: English is the source language
+  (`config/locales/en.yml`) with a Spanish translation (`es.yml`); the locale is
+  picked per request from the browser's `Accept-Language`
+  (`ApplicationController#switch_locale`). Game-table strings needed by Stimulus
+  are passed via the `data-game-table-i18n-value` JSON. Code and comments are
+  English.

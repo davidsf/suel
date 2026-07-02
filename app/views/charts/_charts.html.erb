@@ -7,7 +7,7 @@
       <% (window["charts"] || []).each_with_index do |chart, i| %>
         <button type="button" class="<%= "active" if i.zero? %>"
                 data-action="charts#select" data-charts-index-param="<%= i %>">
-          <%= chart["name"].presence || Array(chart["path"]).join(" · ").presence || "Tabla #{i + 1}" %>
+          <%= chart["name"].presence || Array(chart["path"]).join(" · ").presence || t("charts.chart_n", n: i + 1) %>
         </button>
       <% end %>
     </div>

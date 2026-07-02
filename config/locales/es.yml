@@ -1,0 +1,196 @@
+es:
+  nav:
+    games: "Partidas"
+    upload_module: "Subir módulo"
+    sign_in: "Entrar"
+    sign_out: "Salir"
+    create_account: "Crear cuenta"
+
+  flash:
+    game_created: "Partida creada."
+    joined_as: "Te has unido como %{side}."
+    account_created: "¡Cuenta creada, bienvenido!"
+    try_again_later: "Inténtalo de nuevo más tarde."
+    invalid_credentials: "Prueba con otro email u otra contraseña."
+    module_uploaded: "Módulo subido; importando en segundo plano."
+    module_deleted: "Módulo eliminado."
+    module_reimporting: "Reimportando módulo."
+    reset_sent: "Instrucciones enviadas (si existe un usuario con ese email)."
+    password_was_reset: "La contraseña se ha restablecido."
+    passwords_mismatch: "Las contraseñas no coinciden."
+    reset_link_invalid: "El enlace de restablecimiento no es válido o ha caducado."
+
+  auth:
+    email: "Email"
+    email_placeholder: "Escribe tu email"
+    password: "Contraseña"
+    password_placeholder: "Escribe tu contraseña"
+    new_password_placeholder: "Nueva contraseña"
+    repeat_password_placeholder: "Repite la nueva contraseña"
+    repeat_password: "Repite la contraseña"
+    forgot_password: "¿Has olvidado la contraseña?"
+    forgot_password_title: "¿Has olvidado tu contraseña?"
+    email_reset_instructions: "Enviar instrucciones"
+    update_password: "Cambia tu contraseña"
+    save: "Guardar"
+    already_have_account: "¿Ya tienes cuenta? Entra"
+    reset_body: "Puedes restablecer tu contraseña en"
+    reset_link_text: "esta página de restablecimiento"
+    reset_expiry: "Este enlace caducará en %{time}."
+
+  modules:
+    title: "Módulos"
+    none_yet: "Todavía no hay módulos cargados."
+    upload_first: "Subir el primer módulo"
+    version_abbr: "versión"
+    status:
+      extracting: "extrayendo"
+      parsing: "analizando"
+      ready: "listo"
+      failed: "fallido"
+    progress:
+      extracting_archive: "Extrayendo archivo…"
+      reading_metadata: "Leyendo metadatos…"
+      parsing_module: "Analizando módulo…"
+    maps_and_boards: "Mapas y tableros"
+    hand_of: "mano de %{side}"
+    grid: "rejilla:"
+    decks_no_board: "%{count} mazos, sin tablero"
+    pieces: "Fichas"
+    pieces_palette: "Paleta de fichas"
+    pieces_count:
+      one: "%{count} ficha"
+      other: "%{count} fichas"
+    cards_in_decks: ", %{cards} cartas en %{decks} mazos"
+    charts: "Tablas"
+    charts_link: "Tablas y ayudas"
+    charts_count:
+      one: "%{count} tabla"
+      other: "%{count} tablas"
+    scenarios: "Escenarios"
+    defined_in_module: "definido en el módulo"
+    no_scenarios: "El módulo no incluye escenarios."
+    warnings_summary: "Componentes no soportados y avisos (%{count})"
+    reimport: "Reimportar"
+    delete: "Eliminar"
+    confirm_delete: "¿Eliminar el módulo y todos sus datos?"
+    upload_title: "Subir módulo VASSAL"
+    package_label: "Fichero .vmod"
+    upload_submit: "Subir e importar"
+
+  charts:
+    title: "Tablas"
+    heading: "Tablas y ayudas"
+    none: "Este módulo no incluye tablas de referencia."
+    chart_n: "Tabla %{n}"
+    loading: "Cargando tablas…"
+
+  viewer:
+    grid: "Rejilla"
+    numbering: "Números"
+    fit: "Ajustar"
+
+  palette:
+    title: "Paleta"
+    heading: "Paleta de fichas"
+    none: "Este módulo no define paleta de fichas (las fichas pueden venir colocadas en sus escenarios)."
+    pieces_group: "Fichas"
+    flip: "girar"
+    deck: "Mazo: %{name}"
+    deck_meta: "%{count} cartas · %{map}"
+
+  scenarios:
+    heading: "Escenarios — %{name}"
+    pieces_count:
+      one: "%{count} ficha"
+      other: "%{count} fichas"
+    create_game: "Crear partida"
+    none_ready: "El módulo no incluye escenarios listos."
+    no_known_boards: "Este escenario no tiene fichas sobre tableros conocidos (%{count} fichas, %{unresolved} sin resolver)."
+    unplaced: "%{count} sin ubicar"
+    module_setup_name: "Despliegue del módulo"
+
+  games:
+    title: "Partidas"
+    back: "← Partidas"
+    free_sides:
+      one: "%{count} bando libre"
+      other: "%{count} bandos libres"
+    full: "completa"
+    none_yet: "No hay partidas todavía. Crea una desde la página de un módulo, eligiendo escenario."
+    create: "Crear partida"
+    pick_first: "Elige primero el juego y luego el escenario:"
+    scenarios_count:
+      one: "%{count} escenario"
+      other: "%{count} escenarios"
+    no_ready_modules: "No hay módulos con escenarios listos todavía."
+    new_title: "Nueva partida"
+    scenario_lead: "%{module} — escenario %{scenario}"
+    name_label: "Nombre de la partida"
+    side_label: "Tu bando"
+    no_known_boards: "La partida no tiene fichas sobre tableros conocidos."
+    join_as: "Unirse como %{side}"
+    spectator: "(espectador)"
+    you: " (tú)"
+    cards:
+      one: "%{count} carta"
+      other: "%{count} cartas"
+    close: "cerrar"
+
+  table:
+    charts: "Tablas"
+    log: "Registro"
+    chat_placeholder: "Escribe un mensaje…"
+    send: "Enviar"
+    flip: "Voltear"
+    rotate: "Girar"
+    discard: "Descartar"
+    draw: "Robar"
+    shuffle: "Barajar"
+    reshuffle: "Rebarajar"
+    hand_close: "✕ Mano"
+    hand_hide: "Ocultar la mano"
+    hand_open: "🂠 Mi mano"
+    image_dice:
+      one: "%{count} dado de imagen"
+      other: "%{count} dados de imagen"
+    layer: "Capa"
+    move_to_map: "Mover a otro mapa"
+    placement_hint: "Coloca la ficha: haz clic en el mapa · Esc para cancelar"
+    cancel: "Cancelar"
+    toggle: "alternar"
+    prev_level: "nivel anterior"
+    next_level: "siguiente nivel"
+
+  game_log:
+    draws_one: "%{side} roba 1 carta de %{deck}"
+    draws: "%{by} roba %{card} de %{deck}"
+    a_card: "una carta"
+    a_piece: "una ficha"
+    shuffles: "%{by} baraja %{deck}"
+    reshuffles: "%{by} rebaraja %{deck} en %{target}"
+    plays: "%{by} juega %{card}"
+    discards: "%{by} descarta %{card} en %{deck}"
+    relocates: "%{piece}: %{from} → %{to}"
+
+  activerecord:
+    errors:
+      models:
+        player:
+          attributes:
+            user_id:
+              already_in_game: "ya está en la partida"
+            side:
+              taken_in_game: "ya está ocupado"
+              not_in_module: "no existe en este módulo"
+        game:
+          attributes:
+            scenario:
+              not_ready: "no está listo"
+    attributes:
+      player:
+        user_id: "Jugador"
+        side: "Bando"
+      game:
+        name: "Nombre"
+        scenario: "Escenario"

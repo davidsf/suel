@@ -21,7 +21,7 @@ class DeckMarkerTest < ApplicationSystemTestCase
 
     # Clicking a board deck (a cup) reveals the deck toolbar with its actions.
     # A cup is drawn VASSAL-style by dragging the top piece out, so it offers
-    # Barajar/Rebarajar but not "Robar" (that draws to the hand, hand decks
+    # Shuffle/Reshuffle but not "Draw" (that draws to the hand, hand decks
     # only). The draw behaviour itself is covered by decks_controller_test;
     # here we only confirm the UI wiring.
     page.execute_script(<<~JS)
@@ -30,8 +30,8 @@ class DeckMarkerTest < ApplicationSystemTestCase
       m.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }))
     JS
     assert_selector ".deck-toolbar", visible: true
-    assert_button "Barajar"
-    assert_no_button "Robar" # a cup is drawn by dragging, not "Robar" to hand
+    assert_button "Shuffle"
+    assert_no_button "Draw" # a cup is drawn by dragging, not "Draw" to hand
   end
 
   test "dragging a piece out of the cup drops it on the table" do

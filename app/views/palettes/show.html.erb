@@ -1,15 +1,15 @@
-<% content_for :title, "Paleta — #{@game_module.name}" %>
+<% content_for :title, "#{t('palette.title')} — #{@game_module.name}" %>
 
 <p><%= link_to "← #{@game_module.name}", game_module_path(@game_module) %></p>
-<h1>Paleta de fichas</h1>
+<h1><%= t("palette.heading") %></h1>
 
 <% if @groups.empty? && @decks.empty? %>
-  <p class="muted">Este módulo no define paleta de fichas (las fichas pueden venir colocadas en sus escenarios).</p>
+  <p class="muted"><%= t("palette.none") %></p>
 <% end %>
 
 <% @groups.each do |path, pieces| %>
   <details class="palette-group" open>
-    <summary><strong><%= path.any? ? path.join(" › ") : "Fichas" %></strong> <span class="muted">(<%= pieces.size %>)</span></summary>
+    <summary><strong><%= path.any? ? path.join(" › ") : t("palette.pieces_group") %></strong> <span class="muted">(<%= pieces.size %>)</span></summary>
     <div class="palette-pieces">
       <% pieces.each do |piece| %>
         <figure data-controller="piece">
@@ -18,7 +18,7 @@
           </span>
           <% if (back = piece_back_image(piece.traits)) %>
             <br><button data-action="piece#flip"
-                        data-piece-back-param="<%= module_image_path(@game_module, back) %>">girar</button>
+                        data-piece-back-param="<%= module_image_path(@game_module, back) %>"><%= t("palette.flip") %></button>
           <% end %>
           <figcaption><%= piece.name %></figcaption>
         </figure>
@@ -29,8 +29,8 @@
 
 <% @decks.each do |deck| %>
   <details class="palette-group">
-    <summary><strong>Mazo: <%= deck.name %></strong>
-      <span class="muted">(<%= deck.piece_definitions.size %> cartas · <%= deck.game_map.name %>)</span></summary>
+    <summary><strong><%= t("palette.deck", name: deck.name) %></strong>
+      <span class="muted">(<%= t('palette.deck_meta', count: deck.piece_definitions.size, map: deck.game_map.name) %>)</span></summary>
     <div class="palette-pieces">
       <% deck.piece_definitions.each do |card| %>
         <figure data-controller="piece">
@@ -39,7 +39,7 @@
           </span>
           <% if (back = piece_back_image(card.traits)) %>
             <br><button data-action="piece#flip"
-                        data-piece-back-param="<%= module_image_path(@game_module, back) %>">girar</button>
+                        data-piece-back-param="<%= module_image_path(@game_module, back) %>"><%= t("palette.flip") %></button>
           <% end %>
           <figcaption><%= card.name %></figcaption>
         </figure>

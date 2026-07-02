@@ -20,7 +20,7 @@ class GameTableTest < ApplicationSystemTestCase
     assert_selector ".game-log"
 
     assert_no_selector ".piece-toolbar", visible: :visible,
-      text: "Voltear"
+      text: "Flip"
     input_width = page.evaluate_script('document.querySelector(".chat-form input[type=text]").offsetWidth')
     log_width = page.evaluate_script('document.querySelector(".game-log").offsetWidth')
     assert input_width < log_width, "chat input (#{input_width}px) must fit inside the log panel (#{log_width}px)"

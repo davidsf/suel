@@ -4,13 +4,15 @@ class ModuleImportJob < ApplicationJob
   def perform(game_module)
     @game_module = game_module
 
-    step!("extracting", "Extrayendo archivo…")
+    # progress_note stores an i18n key (modules.progress.*): the note outlives
+    # this job and is rendered per-viewer locale by game_modules/_status.
+    step!("extracting", "extracting_archive")
     extract_package
 
-    step!("parsing", "Leyendo metadatos…")
+    step!("parsing", "reading_metadata")
     read_module_data
 
-    step!("parsing", "Analizando módulo…")
+    step!("parsing", "parsing_module")
     GameModuleImporter.new(@game_module).import
 
     @game_module.update!(status: "ready", progress_note: nil, error_message: nil)

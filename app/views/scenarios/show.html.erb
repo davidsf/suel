@@ -4,8 +4,7 @@
   <p><%= link_to "← #{@game_module.name}", game_module_path(@game_module) %></p>
   <h1><%= @scenario.name %></h1>
   <p class="muted">
-    Este escenario no tiene fichas sobre tableros conocidos
-    (<%= @scenario.scenario_pieces.count %> fichas, <%= @unresolved_count %> sin resolver).
+    <%= t("scenarios.no_known_boards", count: @scenario.scenario_pieces.count, unresolved: @unresolved_count) %>
   </p>
 <% else %>
   <% content_for :main_class, "full" %>
@@ -24,9 +23,9 @@
         <% end %>
       </span>
     <% end %>
-    <span class="muted"><%= @pieces.size %> fichas</span>
+    <span class="muted"><%= t("scenarios.pieces_count", count: @pieces.size) %></span>
     <% if @unresolved_count.positive? %>
-      <span class="muted">· <%= @unresolved_count %> sin ubicar</span>
+      <span class="muted">· <%= t('scenarios.unplaced', count: @unresolved_count) %></span>
     <% end %>
   <% end %>
 

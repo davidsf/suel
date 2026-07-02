@@ -86,7 +86,7 @@ class Game < ApplicationRecord
     end
     broadcast_deck_marker(deck)
     broadcast_hand_count(side)
-    log!("#{side} roba 1 carta de #{deck.name}", kind: "deck")
+    log!(I18n.t("game_log.draws_one", side: side, deck: deck.name), kind: "deck")
     card
   end
 
@@ -104,15 +104,15 @@ class Game < ApplicationRecord
     broadcast_deck_marker(deck)
     broadcast_append_to self, target: ActionView::RecordIdentifier.dom_id(game_map, :pieces),
       partial: "game_pieces/game_piece", locals: { game_piece: card, game_module: game_module }
-    identity = deck.draw_face_up? ? card.name : "una ficha"
-    log!("#{by} roba #{identity} de #{deck.name}", kind: "deck")
+    identity = deck.draw_face_up? ? card.name : I18n.t("game_log.a_piece")
+    log!(I18n.t("game_log.draws", by: by, card: identity, deck: deck.name), kind: "deck")
     card
   end
 
   def shuffle_deck!(deck, by:)
     reorder_deck!(deck)
     broadcast_deck_marker(deck)
-    log!("#{by} baraja #{deck.name}", kind: "deck")
+    log!(I18n.t("game_log.shuffles", by: by, deck: deck.name), kind: "deck")
   end
 
   # Moves every card of the discard pile into its reshuffle target and shuffles.
@@ -122,7 +122,7 @@ class Game < ApplicationRecord
     reorder_deck!(target)
     broadcast_deck_marker(deck)
     broadcast_deck_marker(target)
-    log!("#{by} rebaraja #{deck.name} en #{target.name}", kind: "deck")
+    log!(I18n.t("game_log.reshuffles", by: by, deck: deck.name, target: target.name), kind: "deck")
     true
   end
 
@@ -150,7 +150,7 @@ class Game < ApplicationRecord
       partial: "game_pieces/game_piece", locals: { game_piece: card, game_module: game_module }
     broadcast_remove_to self, by, target: ActionView::RecordIdentifier.dom_id(card, :hand)
     broadcast_hand_count(by)
-    log!("#{by} juega #{card.name}", kind: "deck")
+    log!(I18n.t("game_log.plays", by: by, card: card.name), kind: "deck")
   end
 
   # After a card is discarded to a deck. From the map, remove the public piece
@@ -165,8 +165,8 @@ class Game < ApplicationRecord
       broadcast_remove_to self, target: ActionView::RecordIdentifier.dom_id(card)
     end
     broadcast_deck_marker(deck)
-    identity = deck.face_down? ? "una carta" : card.name
-    log!("#{by} descarta #{identity} en #{deck.name}", kind: "deck")
+    identity = deck.face_down? ? I18n.t("game_log.a_card") : card.name
+    log!(I18n.t("game_log.discards", by: by, card: identity, deck: deck.name), kind: "deck")
   end
 
   # After a piece is moved from one map to another. The piece's own
@@ -180,7 +180,7 @@ class Game < ApplicationRecord
     broadcast_remove_to self, target: ActionView::RecordIdentifier.dom_id(piece)
     broadcast_append_to self, target: ActionView::RecordIdentifier.dom_id(piece.game_map, :pieces),
       partial: "game_pieces/game_piece", locals: { game_piece: piece, game_module: game_module }
-    log!("#{piece.name}: #{from_map.name} → #{piece.game_map.name}", kind: "chat")
+    log!(I18n.t("game_log.relocates", piece: piece.name, from: from_map.name, to: piece.game_map.name), kind: "chat")
   end
 
   # Broadcasts the side effects of a PieceCommand run. Pieces moved in place
@@ -229,6 +229,6 @@ class Game < ApplicationRecord
   end
 
   def scenario_must_be_ready
-    errors.add(:scenario, "no está listo") unless scenario&.ready?
+    errors.add(:scenario, :not_ready) unless scenario&.ready?
   end
 end
