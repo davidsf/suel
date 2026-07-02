@@ -84,7 +84,37 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_match "game_piece_", response.body
   end
 
+  test "the hand tray only exists when the module defines a PlayerHand" do
+    sign_in_as users(:one)
+
+    # Holland '44-style module: map windows but no PlayerHand.
+    no_hands = create_two_map_module!
+    ModuleImportJob.perform_now(no_hands)
+    game = create_game_for!(no_hands.reload)
+    get game_path(game)
+    assert_response :success
+    assert_no_match "hand-tray", response.body
+    assert_no_match "hand_count", response.body
+
+    # Card module: a "Mano A" PlayerHand owned by Bando A.
+    with_hands = create_card_module!
+    ModuleImportJob.perform_now(with_hands)
+    game = create_game_for!(with_hands.reload)
+    get game_path(game)
+    assert_response :success
+    assert_match "hand-tray-open", response.body
+    assert_match "hand_count", response.body
+  end
+
   private
+
+  def create_game_for!(game_module)
+    game = Game.create!(game_module: game_module, creator: users(:one), name: "Prueba",
+                        scenario: game_module.scenarios.find_by(kind: "module_setup"))
+    game.copy_scenario_pieces!
+    game.players.create!(user: users(:one), side: "Bando A")
+    game
+  end
 
   def create_game!
     game = Game.create!(game_module: @game_module, scenario: @scenario,

@@ -24,7 +24,7 @@
     <span class="muted">
       <% @game.players.each do |player| %>
         <%= player.side %>: <%= player.user.email_address.split("@").first %><%= t("games.you") if player == @player %>
-        (<%= render "games/hand_count", game: @game, side: player.side %>) ·
+        <% if @module_has_hands %>(<%= render "games/hand_count", game: @game, side: player.side %>)<% end %> ·
       <% end %>
     </span>
     <% if @player.nil? %>
@@ -124,7 +124,9 @@
         <button data-game-table-target="reshuffleButton" data-action="game-table#reshuffleDeck"><%= t("table.reshuffle") %></button>
       </div>
 
-      <%# The tray starts collapsed; players open it from the "Mi mano" tab. %>
+      <%# Only when the module gives this side a hand (a PlayerHand window).
+          The tray starts collapsed; players open it from the "Mi mano" tab. %>
+      <% if @player_hand %>
       <div class="hand-tray" data-game-table-target="handTray" hidden>
         <button class="hand-tray-close" data-action="game-table#closeTray" title="<%= t("table.hand_hide") %>"><%= t("table.hand_close") %></button>
         <% if @hand_decks.any? %>
@@ -142,6 +144,7 @@
       </div>
       <button class="hand-tray-open" data-game-table-target="handOpen"
               data-action="game-table#openTray"><%= t("table.hand_open") %></button>
+      <% end %>
     <% end %>
 
     <% if @game_module.charts? %>

@@ -84,9 +84,17 @@ class GamesController < ApplicationController
     # Decks shown on the current map (markers on hand maps live in the tray)
     @decks = @game_map ? @game_map.decks.reject { |d| @game_map.kind_player_hand? } : []
     @all_decks = @game_module.decks.to_a
+    # Hands exist only if the module defines PlayerHand windows (VASSAL's
+    # PrivateMap owned by a side) — modules like Holland '44 have none, so no
+    # hand tray and no card counts.
+    hand_maps = @game_module.game_maps.kind_player_hand
+    @module_has_hands = hand_maps.exists?
     if @player
       @hand_cards = @game.game_pieces.in_hand(@player.side).order(:id)
-      @hand_decks = @game_module.game_maps.kind_player_hand.where(side: @player.side).flat_map(&:decks)
+      @hand_decks = hand_maps.where(side: @player.side).flat_map(&:decks)
+      # The player's own hand: a PlayerHand for their side (blank = any side),
+      # or cards already held (never strand them without a tray).
+      @player_hand = @hand_cards.any? || hand_maps.where(side: [ nil, "", @player.side ]).exists?
     end
   end
 end
