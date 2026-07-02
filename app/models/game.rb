@@ -169,6 +169,20 @@ class Game < ApplicationRecord
     log!("#{by} descarta #{identity} en #{deck.name}", kind: "deck")
   end
 
+  # After a piece is moved from one map to another. The piece's own
+  # after_update_commit replace re-renders it for source-map viewers (now at the
+  # destination coordinates) and is a no-op for destination-map viewers (the node
+  # isn't there yet). So we remove it (deletes it for the source, no-op for the
+  # destination) and then append it to its new map container (no-op for the
+  # source, inserts it for the destination) — order matters so the freshly
+  # appended node isn't deleted.
+  def after_piece_relocated(piece, from_map:)
+    broadcast_remove_to self, target: ActionView::RecordIdentifier.dom_id(piece)
+    broadcast_append_to self, target: ActionView::RecordIdentifier.dom_id(piece.game_map, :pieces),
+      partial: "game_pieces/game_piece", locals: { game_piece: piece, game_module: game_module }
+    log!("#{piece.name}: #{from_map.name} → #{piece.game_map.name}", kind: "chat")
+  end
+
   # Broadcasts the side effects of a PieceCommand run. Pieces moved in place
   # already broadcast their own replace; here we insert pieces newly placed on a
   # map (their replace was a no-op for viewers), refresh decks that lost pieces,

@@ -28,6 +28,7 @@ Rails.application.routes.draw do
         patch :cycle_layer
         patch :adjust_property
         patch :play
+        patch :relocate
         patch :discard
         post :command
       end

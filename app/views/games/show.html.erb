@@ -43,7 +43,9 @@
        class="<%= "game-table-has-tray" if @player %>"
        data-game-table-playable-value="<%= @player.present? %>"
        data-game-table-snap-url-value="<%= snap_game_path(@game) %>"
-       data-game-table-map-value="<%= @game_map.id %>">
+       data-game-table-map-value="<%= @game_map.id %>"
+       data-game-table-maps-value="<%= @destination_maps.map { |m| { id: m.id, name: m.name, url: game_path(@game, map: m.id) } }.to_json %>"
+       data-game-table-relocate-url-template-value="<%= relocate_game_piece_path(@game, "PIECE_ID") %>">
     <%= turbo_stream_from @game %>
     <%= turbo_stream_from @game, @player.side if @player %>
 
