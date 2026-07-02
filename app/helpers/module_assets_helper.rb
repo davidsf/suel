@@ -3,6 +3,15 @@ module ModuleAssetsHelper
     game_module_asset_path(game_module, path: "images/#{filename}")
   end
 
+  # The module-defined toolbar icon for a map window (VASSAL Map "icon"
+  # attribute, an image inside the module); nil when the module sets none
+  # (VASSAL then falls back to an engine icon we don't ship).
+  def map_tab_icon(game_map, game_module)
+    icon = game_map.settings["icon"].presence or return
+    return unless game_module.extracted_dir.join("images", icon).file?
+    image_tag module_image_path(game_module, icon), class: "map-tab-icon", alt: ""
+  end
+
   # Downscaled board preview when the import produced one, full image otherwise.
   def board_preview_path(board, game_module = board.game_map.game_module)
     preview = "previews/#{board.image_filename}.jpg"

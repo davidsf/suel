@@ -104,6 +104,18 @@ svg.grid-overlay g[hidden] { display: none; }
 .viewer-bar .spacer { margin-left: auto; }
 .viewer-bar button { font: inherit; padding: 0.1rem 0.6rem; }
 
+/* map switcher: VASSAL-like tab buttons, the active map filled in */
+.map-tabs { display: inline-flex; gap: 0.25rem; flex-wrap: wrap; }
+.map-tab {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.1rem 0.7rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--ink); text-decoration: none;
+  font-size: 0.85rem; white-space: nowrap;
+}
+.map-tab-icon { height: 1.2em; width: auto; max-width: 2.4em; object-fit: contain; }
+a.map-tab:hover { border-color: var(--accent); color: var(--accent); }
+.map-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
 /* ---- pieces ---- */
 .piece { position: absolute; transform: translate(-50%, -50%); }
 .piece .piece-images { position: relative; display: inline-block; }

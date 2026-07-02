@@ -11,15 +11,15 @@
     <%= link_to t("games.back"), games_path %>
     <strong><%= @game.name %></strong>
     <% if @maps.size > 1 %>
-      <span class="muted">
+      <nav class="map-tabs">
         <% @maps.each do |map| %>
           <% if map == @game_map %>
-            <strong><%= map.name %></strong>
+            <span class="map-tab active"><%= map_tab_icon(map, @game_module) %><%= map.name %></span>
           <% else %>
-            <%= link_to map.name, game_path(@game, map: map.id) %>
+            <%= link_to game_path(@game, map: map.id), class: "map-tab" do %><%= map_tab_icon(map, @game_module) %><%= map.name %><% end %>
           <% end %>
         <% end %>
-      </span>
+      </nav>
     <% end %>
     <span class="muted">
       <% @game.players.each do |player| %>
