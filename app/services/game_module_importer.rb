@@ -206,27 +206,38 @@ class GameModuleImporter
   end
 
   # Import the module's saved scenarios. When the buildFile registers
-  # PredefinedSetups (what VASSAL exposes in its "New game" menu), import only
-  # the .vsav files they reference — modules sometimes ship leftover save files
-  # that would otherwise show up as spurious duplicates. With no PredefinedSetup
-  # at all, fall back to importing every loose .vsav.
+  # PredefinedSetups (what VASSAL exposes in its "New game" menu), import the
+  # files they reference — any archive entry by name, .vsav, .sav or no
+  # extension at all (PredefinedSetup reads it via
+  # DataArchive.getInputStream(fileName)) — and skip leftover save files that
+  # would otherwise show up as spurious duplicates. With no PredefinedSetup at
+  # all, fall back to importing every loose .vsav.
   def import_save_files
-    paths = Dir.glob(@dir.join("**", "*.vsav")).sort
-    if @setups_by_file.any?
-      wanted = @setups_by_file.keys.to_set
-      (wanted - paths.map { |p| File.basename(p) }).each do |file|
-        warn "scenario referenced without a file: #{file}"
+    paths =
+      if @setups_by_file.any?
+        @setups_by_file.values.filter_map do |setup|
+          resolve_setup_file(setup.file) or
+            (warn "scenario referenced without a file: #{setup.file}"; nil)
+        end.uniq.sort
+      else
+        Dir.glob(@dir.join("**", "*.vsav")).sort
       end
-      paths = paths.select { |path| wanted.include?(File.basename(path)) }
-    end
     paths.each { |path| import_save_file(path) }
+  end
+
+  # The setup's file attribute relative to the archive root, falling back to a
+  # basename search (some modules store a leading path we flatten on extract).
+  def resolve_setup_file(file)
+    candidate = @dir.join(file)
+    return candidate.to_s if candidate.file?
+    Dir.glob(@dir.join("**", File.basename(file))).find { |p| File.file?(p) }
   end
 
   def import_save_file(path)
     relative = Pathname(path).relative_path_from(@dir).to_s
     setup = @setups_by_file[File.basename(path)]
     scenario = @game_module.scenarios.create!(
-      name: setup&.name.presence || File.basename(path, ".vsav").tr("_", " "),
+      name: setup&.name.presence || File.basename(path, ".*").tr("_", " "),
       category: setup && setup.menu_path.join(" › ").presence,
       kind: "vsav", source_filename: relative
     )
