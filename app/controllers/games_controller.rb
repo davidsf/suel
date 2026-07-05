@@ -58,18 +58,27 @@ class GamesController < ApplicationController
 
     placed = @game.game_pieces.where.not(game_map_id: nil)
     piece_map_ids = placed.group(:game_map_id).order(count_all: :desc).count.keys
-    # Also surface map-kind maps that only host decks (e.g. a "Cards" display)
+    # Every map window of the module is reachable, as in VASSAL (each Map has
+    # a toolbar launch button): piece-bearing maps first (busiest first, any
+    # kind), then deck hosts (e.g. a "Cards" display), then the rest — charts,
+    # tables, setup cards — in module order.
+    module_maps = @game_module.game_maps.kind_map.includes(:boards).to_a
     deck_map_ids = @game_module.game_maps.kind_map.joins(:decks).distinct.pluck(:id)
-    map_ids = (piece_map_ids + (deck_map_ids - piece_map_ids))
-    @maps = map_ids.filter_map { |map_id| GameMap.includes(:boards).find_by(id: map_id) }
-    @game_map = @maps.find { |m| m.id == params[:map].to_i }
-    if @game_map.nil? && params[:map].present?
-      # A relocate target may be a real map that has no pieces or decks yet —
-      # render it too (and surface it in the selector) so the move can land.
-      @game_map = @game_module.game_maps.kind_map.includes(:boards).find_by(id: params[:map])
-      @maps = [ @game_map, *@maps ] if @game_map
+    piece_maps = piece_map_ids.filter_map do |id|
+      module_maps.find { |m| m.id == id } || GameMap.includes(:boards).find_by(id: id)
     end
-    @game_map ||= @maps.first
+    rest = module_maps.reject { |m| piece_map_ids.include?(m.id) }
+      .sort_by { |m| [ deck_map_ids.include?(m.id) ? 0 : 1, m.position ] }
+    @maps = piece_maps + rest
+    @game_map = @maps.find { |m| m.id == params[:map].to_i } || @maps.first
+    # VASSAL ToolbarMenu grouping: menu entries match map windows by their
+    # launch button text (buttonName); unmatched entries are skipped and empty
+    # menus don't render. Grouped maps leave the flat tab list.
+    @map_menus = @game_module.toolbar_menus.filter_map do |menu|
+      maps = menu["items"].filter_map { |item| @maps.find { |m| m.settings["buttonName"] == item } }.uniq
+      { name: menu["name"], icon: menu["icon"], maps: } if maps.any?
+    end
+    @tab_maps = @maps - @map_menus.flat_map { |m| m[:maps] }
     @layout = @game_map ? @game.board_layout(@game_map).entries : []
     # Destinations offered by the "move to another map" piece menu: every real
     # map of the module except the one in view (VASSAL lets a piece be dragged

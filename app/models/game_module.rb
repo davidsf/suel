@@ -50,6 +50,27 @@ class GameModule < ApplicationRecord
     end.uniq
   end
 
+  # Toolbar dropdown menus (VASSAL ToolbarMenu), derived at runtime from the
+  # persisted build_tree. In VASSAL each menu hides the toolbar buttons whose
+  # untranslated text matches an entry of menuItems (a SequenceEncoder list
+  # with ',') and re-exposes them as menu entries; unmatched entries are
+  # skipped. The visible label is "text" (empty in practice) — fall back to
+  # tooltip, then the editor-only description. propertyGate/canDisable/hotkey
+  # and nested menu-in-menu are deliberately ignored; menus defined inside a
+  # Map reference map-internal buttons and simply match no map window.
+  def toolbar_menus
+    find_nodes(build_tree, "VASSAL.build.module.ToolbarMenu").filter_map do |node|
+      attrs = node["attributes"] || {}
+      decoder = Vassal::SequenceEncoder::Decoder.new(attrs["menuItems"].to_s, ",")
+      items = []
+      items << decoder.next_token("") while decoder.more_tokens?
+      items = items.reject(&:blank?)
+      next if items.empty?
+      { "name" => attrs["text"].presence || attrs["tooltip"].presence || attrs["description"].presence,
+        "icon" => attrs["icon"].presence, "items" => items }
+    end
+  end
+
   # Image-faced dice (SpecialDiceButton → SpecialDie → SpecialDieFace). Each
   # button holds one or more dice; each die is a list of faces {value,text,icon}.
   def special_dice

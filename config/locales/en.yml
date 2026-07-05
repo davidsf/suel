@@ -139,6 +139,7 @@ en:
 
   table:
     charts: "Charts"
+    menu: "Menu"
     log: "Log"
     chat_placeholder: "Write a message…"
     send: "Send"

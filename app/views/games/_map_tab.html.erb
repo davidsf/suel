@@ -1,0 +1,5 @@
+<% if active %>
+  <span class="map-tab active"><%= map_tab_icon(map, game_module) %><%= map.name %></span>
+<% else %>
+  <%= link_to game_path(game, map: map.id), class: "map-tab" do %><%= map_tab_icon(map, game_module) %><%= map.name %><% end %>
+<% end %>

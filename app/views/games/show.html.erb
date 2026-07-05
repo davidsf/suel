@@ -12,12 +12,20 @@
     <strong><%= @game.name %></strong>
     <% if @maps.size > 1 %>
       <nav class="map-tabs">
-        <% @maps.each do |map| %>
-          <% if map == @game_map %>
-            <span class="map-tab active"><%= map_tab_icon(map, @game_module) %><%= map.name %></span>
-          <% else %>
-            <%= link_to game_path(@game, map: map.id), class: "map-tab" do %><%= map_tab_icon(map, @game_module) %><%= map.name %><% end %>
-          <% end %>
+        <% @tab_maps.each do |map| %>
+          <%= render "games/map_tab", game: @game, game_module: @game_module, map: map, active: map == @game_map %>
+        <% end %>
+        <% @map_menus.each do |menu| %>
+          <details class="map-menu">
+            <summary class="map-tab <%= "active" if menu[:maps].include?(@game_map) %>">
+              <%= toolbar_icon(@game_module, menu[:icon]) %><%= menu[:name] || t("table.menu") %> ▾
+            </summary>
+            <div class="map-menu-list">
+              <% menu[:maps].each do |map| %>
+                <%= render "games/map_tab", game: @game, game_module: @game_module, map: map, active: map == @game_map %>
+              <% end %>
+            </div>
+          </details>
         <% end %>
       </nav>
     <% end %>

@@ -136,6 +136,49 @@ module VmodTestHelper
     XML
   end
 
+  # A Holland '44-style module: a Main Map with pieces plus piece-less chart
+  # map windows, two of them grouped under a ToolbarMenu "Charts &amp; Tables"
+  # (matching by buttonName), one ungrouped, and a ToolbarMenu whose items
+  # match nothing (VASSAL Inventory buttons we don't import).
+  def create_chart_maps_module!
+    create_game_module!(
+      "buildFile.xml" => chart_maps_build_file,
+      "moduledata" => %(<?xml version="1.0"?><data version="1"><name>Charts</name><version>1.0</version><VassalVersion>3.7.0</VassalVersion></data>),
+      "images/board.png" => "fake"
+    )
+  end
+
+  def chart_maps_build_file
+    chart = ->(map_name, button_name, board) do
+      <<~MAP
+        <VASSAL.build.module.Map mapName="#{map_name}" buttonName="#{button_name}" launch="true" markMoved="Never">
+          <VASSAL.build.module.map.BoardPicker>
+            <VASSAL.build.module.map.boardPicker.Board name="#{board}" image="board.png" width="600" height="400"/>
+          </VASSAL.build.module.map.BoardPicker>
+        </VASSAL.build.module.Map>
+      MAP
+    end
+    <<~XML
+      <?xml version="1.0"?>
+      <VASSAL.build.GameModule name="Charts" version="1.0" VassalVersion="3.7.0">
+        <VASSAL.build.module.PlayerRoster><entry>Bando A</entry><entry>Bando B</entry></VASSAL.build.module.PlayerRoster>
+        <VASSAL.build.module.Map mapName="Main Map" buttonName="Map" launch="false">
+          <VASSAL.build.module.map.BoardPicker>
+            <VASSAL.build.module.map.boardPicker.Board name="Board1" image="board.png" width="600" height="400"/>
+          </VASSAL.build.module.map.BoardPicker>
+          <VASSAL.build.module.map.SetupStack name="Start" owningBoard="Board1" x="300" y="200">
+            <VASSAL.build.widget.PieceSlot entryName="Dummy" gpid="1" width="50" height="50">+/null/piece;;;board.png;Dummy/null;300;200;1;0</VASSAL.build.widget.PieceSlot>
+          </VASSAL.build.module.map.SetupStack>
+        </VASSAL.build.module.Map>
+        #{chart.("Combat Results Table", "CRT (Alt+C)", "CRTBoard")}
+        #{chart.("Terrain Effects Chart", "TEC (Alt+T)", "TECBoard")}
+        #{chart.("Alternative Display", "", "AltBoard")}
+        <VASSAL.build.module.ToolbarMenu description="Charts &amp; Tables" text="" tooltip="Charts &amp; Tables" icon="" menuItems="CRT (Alt+C),TEC (Alt+T)"/>
+        <VASSAL.build.module.ToolbarMenu description="Unit Inventories" text="" tooltip="Unit Inventories" icon="" menuItems="Nothing Matches"/>
+      </VASSAL.build.GameModule>
+    XML
+  end
+
   # The breadcrumb spec a PlaceMarker trait uses to point at the "Status Marker"
   # palette slot above (PieceWindow → TabWidget → ListWidget → PieceSlot).
   STATUS_MARKER_SPEC =

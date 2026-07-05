@@ -116,6 +116,17 @@ svg.grid-overlay g[hidden] { display: none; }
 a.map-tab:hover { border-color: var(--accent); color: var(--accent); }
 .map-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
+/* map switcher dropdown: a VASSAL ToolbarMenu grouping several map windows */
+.map-menu { position: relative; }
+.map-menu > summary { list-style: none; cursor: pointer; }
+.map-menu > summary::-webkit-details-marker { display: none; }
+.map-menu[open] > .map-menu-list {
+  position: absolute; top: calc(100% + 0.25rem); left: 0; z-index: 1000;
+  display: flex; flex-direction: column; gap: 0.25rem;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.3rem; min-width: max-content;
+}
+
 /* ---- pieces ---- */
 .piece { position: absolute; transform: translate(-50%, -50%); }
 .piece .piece-images { position: relative; display: inline-block; }

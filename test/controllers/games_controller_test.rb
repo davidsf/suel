@@ -106,6 +106,36 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_match "hand_count", response.body
   end
 
+  test "piece-less map windows show as tabs, grouped by ToolbarMenu like VASSAL" do
+    sign_in_as users(:one)
+    charts = create_chart_maps_module!
+    ModuleImportJob.perform_now(charts)
+    game = create_game_for!(charts.reload)
+
+    get game_path(game)
+    assert_response :success
+
+    # The ungrouped piece-less map is a plain tab; the grouped ones are not.
+    ungrouped = charts.game_maps.find_by(name: "Alternative Display")
+    assert_select "nav.map-tabs > a.map-tab[href=?]", game_path(game, map: ungrouped.id)
+    crt = charts.game_maps.find_by(name: "Combat Results Table")
+    tec = charts.game_maps.find_by(name: "Terrain Effects Chart")
+    assert_select "nav.map-tabs > a.map-tab[href=?]", game_path(game, map: crt.id), count: 0
+
+    # One dropdown with both chart maps; the no-match menu doesn't render.
+    assert_select "details.map-menu", count: 1
+    assert_select "details.map-menu summary", text: /Charts & Tables/
+    assert_select "details.map-menu a.map-tab[href=?]", game_path(game, map: crt.id)
+    assert_select "details.map-menu a.map-tab[href=?]", game_path(game, map: tec.id)
+    assert_select "summary", text: /Unit Inventories/, count: 0
+
+    # Opening a grouped chart map renders it and marks the menu active.
+    get game_path(game, map: crt.id)
+    assert_response :success
+    assert_select "details.map-menu summary.active"
+    assert_select "details.map-menu span.map-tab.active", text: /Combat Results Table/
+  end
+
   private
 
   def create_game_for!(game_module)
