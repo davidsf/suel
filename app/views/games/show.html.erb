@@ -10,19 +10,23 @@
   <% toolbar = capture do %>
     <%= link_to t("games.back"), games_path %>
     <strong><%= @game.name %></strong>
-    <% if @maps.size > 1 %>
+    <% if @maps.size > 1 || @map_menus.any? %>
       <nav class="map-tabs">
         <% @tab_maps.each do |map| %>
           <%= render "games/map_tab", game: @game, game_module: @game_module, map: map, active: map == @game_map %>
         <% end %>
         <% @map_menus.each do |menu| %>
           <details class="map-menu">
-            <summary class="map-tab <%= "active" if menu[:maps].include?(@game_map) %>">
+            <summary class="map-tab <%= "active" if menu[:entries].any? { |e| e[:map] == @game_map } %>">
               <%= toolbar_icon(@game_module, menu[:icon]) %><%= menu[:name] || t("table.menu") %> ▾
             </summary>
             <div class="map-menu-list">
-              <% menu[:maps].each do |map| %>
-                <%= render "games/map_tab", game: @game, game_module: @game_module, map: map, active: map == @game_map %>
+              <% menu[:entries].each do |entry| %>
+                <% if entry[:map] %>
+                  <%= render "games/map_tab", game: @game, game_module: @game_module, map: entry[:map], active: entry[:map] == @game_map %>
+                <% else %>
+                  <%= render "games/global_key_button", game: @game, game_module: @game_module, entry: entry, css_class: "map-tab" %>
+                <% end %>
               <% end %>
             </div>
           </details>
@@ -76,7 +80,7 @@
       <% end %>
     <% end %>
 
-    <% if @player && (@dice_buttons.any? || @special_dice.any?) %>
+    <% if @player && (@dice_buttons.any? || @special_dice.any? || @toolbar_global_keys.any?) %>
       <div class="dice-bar">
         <% @dice_buttons.each_with_index do |button, index| %>
           <button data-action="game-table#roll"
@@ -91,6 +95,9 @@
                   title="<%= t("table.image_dice", count: button['dice'].size) %>">
             🎲 <%= button["label"] %>
           </button>
+        <% end %>
+        <% @toolbar_global_keys.each do |entry| %>
+          <%= render "games/global_key_button", game: @game, game_module: @game_module, entry: entry, css_class: nil %>
         <% end %>
       </div>
     <% end %>

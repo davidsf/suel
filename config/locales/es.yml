@@ -164,6 +164,7 @@ es:
     next_level: "siguiente nivel"
 
   game_log:
+    global_key: "%{side} ejecuta %{name}"
     draws_one: "%{side} roba 1 carta de %{deck}"
     draws: "%{by} roba %{card} de %{deck}"
     a_card: "una carta"

@@ -71,6 +71,30 @@ class GameModule < ApplicationRecord
     end
   end
 
+  # Module-toolbar Global Key Commands (VASSAL GlobalKeyCommand), derived at
+  # runtime from the persisted build_tree. Each is a toolbar button that
+  # broadcasts its hotkey to matching pieces; returned trait-shaped so
+  # PieceCommand can execute them directly. "text" (buttonText) is the key
+  # ToolbarMenu matches menu items against. StartupGlobalKeyCommands have no
+  # button and are not included.
+  def global_key_commands
+    find_nodes(build_tree, "VASSAL.build.module.GlobalKeyCommand").filter_map do |node|
+      attrs = node["attributes"] || {}
+      keystroke = Vassal::Piece::TraitRegistry.keystroke(attrs["hotkey"].to_s)
+      next if keystroke.blank?
+      { "kind" => "global_key",
+        "name" => attrs["name"].presence || attrs["buttonText"].presence,
+        "text" => attrs["buttonText"].to_s,
+        "icon" => attrs["icon"].presence,
+        "tooltip" => attrs["tooltip"].presence,
+        "global_key" => keystroke,
+        "target" => attrs["target"].presence,
+        "property_filter" => attrs["filter"].presence,
+        "count" => (attrs["deckCount"].to_i if attrs["deckCount"].to_s.match?(/\A\d+\z/)),
+        "report_format" => attrs["reportFormat"].presence }.compact
+    end
+  end
+
   # Image-faced dice (SpecialDiceButton → SpecialDie → SpecialDieFace). Each
   # button holds one or more dice; each die is a list of faces {value,text,icon}.
   def special_dice

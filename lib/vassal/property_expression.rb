@@ -46,12 +46,17 @@ module Vassal
 
     # Resolves one side of a comparison to a string, or nil when it references an
     # unknown property (so the whole comparison declines to a confident false).
+    # A bare identifier is a property reference in BeanShell (BasicName == "x");
+    # it resolves only when the property exists, otherwise it stays a literal so
+    # numeric literals and legacy expressions keep working.
     def operand(token, props)
       token = token.strip
       if token.start_with?("$") && token.end_with?("$")
         props[token[1..-2]]&.to_s
       elsif token.start_with?('"') || token.start_with?("'")
         token[1..-2]
+      elsif props.key?(token)
+        props[token].to_s
       else
         token
       end

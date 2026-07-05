@@ -164,6 +164,7 @@ en:
     next_level: "next level"
 
   game_log:
+    global_key: "%{side} runs %{name}"
     draws_one: "%{side} draws 1 card from %{deck}"
     draws: "%{by} draws %{card} from %{deck}"
     a_card: "a card"

@@ -32,4 +32,14 @@ class Vassal::PropertyExpressionTest < ActiveSupport::TestCase
     refute match?("", {})
     refute match?("{garbage}", {})
   end
+
+  test "a bare identifier resolves as a property when it exists" do
+    assert match?('{BasicName=="Setup 1941 Scenario"}', "BasicName" => "Setup 1941 Scenario")
+    refute match?('{BasicName=="Setup 1941 Scenario"}', "BasicName" => "Other")
+  end
+
+  test "an unknown bare token stays a literal" do
+    assert match?("{$Count$==3}", "Count" => "3"), "numeric literals keep working"
+    assert match?('{"GE"=="GE"}', {})
+  end
 end

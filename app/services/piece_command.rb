@@ -30,6 +30,21 @@ class PieceCommand
     new(piece.game, by:, deck_choice:).tap { |cmd| cmd.fire(piece, keystroke) }
   end
 
+  # Fires a module-level GlobalKeyCommand (a trait-shaped spec from
+  # GameModule#global_key_commands) at every matching piece, the way
+  # VASSAL.build.module.GlobalKeyCommand#apply searches all maps.
+  def self.broadcast(game, spec, by:)
+    new(game, by:).tap do |cmd|
+      cmd.targets(spec).each { |piece| cmd.fire(piece, spec["global_key"]) }
+      cmd.report(spec["report_format"])
+    end
+  end
+
+  # Expands and logs a module-level report format (no piece context).
+  def report(format)
+    @reports << format.gsub(/\$([^$]+)\$/) { @game.property($1) || "" } if format.present?
+  end
+
   def fire(piece, keystroke, depth = 0)
     return if depth > MAX_DEPTH || keystroke.blank?
 
@@ -46,6 +61,30 @@ class PieceCommand
       when "clone"        then run_clone(piece, trait, keystroke)
       when "report"       then run_report(piece, trait, keystroke)
       end
+    end
+  end
+
+  # Pieces a Global Key Command applies to, per its GlobalCommandTarget: a
+  # named deck (the top N or all of it), or the on-map pieces — optionally
+  # narrowed to one map by a location fast-match, then by the property
+  # fast-match and the BeanShell propertiesFilter. Divergences from VASSAL,
+  # acceptable so far: hand/deck pieces are excluded from non-DECK targets
+  # (VASSAL reaches deck pieces per deckCount), and a legacy deck trait
+  # count of 0 still means "all".
+  def targets(trait)
+    target = Vassal::GlobalCommandTarget.parse(trait["target"])
+    if target&.deck_target? || (target.nil? && trait["deck"].present?)
+      deck = @game.deck_named(target&.deck.presence || trait["deck"]) or return []
+      scope = @game.game_pieces.in_deck(deck)
+      count = trait["count"].to_i
+      count.positive? ? scope.limit(count).to_a : scope.to_a
+    else
+      scope = @game.game_pieces.on_map
+      if target&.fast_match_location? && %w[MAP ZONE LOCATION XY].include?(target.target_type) && target.map.present?
+        map = @game.game_module.game_maps.find_by(name: target.map)
+        scope = map ? scope.where(game_map: map) : GamePiece.none
+      end
+      scope.select { |piece| matches?(piece, target, trait["property_filter"]) }
     end
   end
 
@@ -172,15 +211,13 @@ class PieceCommand
     @reports << resolve(trait["format"], piece)
   end
 
-  # Pieces a CounterGlobalKeyCommand applies to. Only deck targeting is
-  # supported so far (the top N of a named deck, or all of it).
-  def targets(trait)
-    return [] if trait["deck"].blank?
-
-    deck = @game.deck_named(trait["deck"]) or return []
-    scope = @game.game_pieces.in_deck(deck)
-    count = trait["count"].to_i
-    count.positive? ? scope.limit(count).to_a : scope.to_a
+  # A target piece passes the property fast-match and then the BeanShell
+  # propertiesFilter; properties resolve on the piece first, then the game's
+  # globals, like getProperty.
+  def matches?(piece, target, filter)
+    props = @game.properties.to_h.merge(piece.vassal_properties)
+    return false if target && !target.property_match?(props)
+    filter.blank? || Vassal::PropertyExpression.match?(filter, props)
   end
 
   # Resolves a SendToLocation trait to [game_map, map_x, map_y], or nil. Grid

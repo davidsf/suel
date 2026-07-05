@@ -35,6 +35,33 @@ class GameModuleTest < ActiveSupport::TestCase
     assert_empty game_module.toolbar_menus
   end
 
+  test "global_key_commands derives toolbar GKC buttons from the build_tree" do
+    game_module = GameModule.new(build_tree: {
+      "class" => "VASSAL.build.GameModule",
+      "children" => [
+        { "class" => "VASSAL.build.module.GlobalKeyCommand",
+          "attributes" => { "name" => "1941 Campaign", "buttonText" => "Setup 1941",
+                            "tooltip" => "Setup", "icon" => "setup.png",
+                            "hotkey" => "57358,0,SetupGame", "deckCount" => "-1",
+                            "filter" => "", "target" => "MODULE|false|MAP|X||||0|0||false|||EQUALS||" } },
+        { "class" => "VASSAL.build.module.GlobalKeyCommand",
+          "attributes" => { "name" => "Keyless", "buttonText" => "Keyless", "hotkey" => "" } },
+        { "class" => "VASSAL.build.module.StartupGlobalKeyCommand",
+          "attributes" => { "name" => "At startup", "hotkey" => "57359,0,Startup" } }
+      ]
+    })
+
+    commands = game_module.global_key_commands
+    assert_equal 1, commands.size, "keyless buttons and StartupGKCs are skipped"
+    command = commands.first
+    assert_equal "global_key", command["kind"]
+    assert_equal "1941 Campaign", command["name"]
+    assert_equal "Setup 1941", command["text"]
+    assert_equal "named:SetupGame", command["global_key"]
+    assert_nil command["count"], "-1 (all) maps to nil like the trait registry"
+    assert_nil command["property_filter"]
+  end
+
   test "toolbar_menus finds menus nested inside folders" do
     game_module = GameModule.new(build_tree: {
       "class" => "VASSAL.build.GameModule",

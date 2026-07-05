@@ -1,0 +1,6 @@
+<button class="<%= css_class %>"
+        data-action="game-table#roll"
+        data-game-table-url-param="<%= game_global_keys_path(game, button: entry[:index]) %>"
+        <% if entry[:gkc]["tooltip"] %>title="<%= entry[:gkc]["tooltip"] %>"<% end %>>
+  <%= toolbar_icon(game_module, entry[:gkc]["icon"]) %><%= entry[:gkc]["text"].presence || entry[:gkc]["name"] %>
+</button>

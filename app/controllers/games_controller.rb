@@ -76,14 +76,25 @@ class GamesController < ApplicationController
       .sort_by { |m| [ deck_map_ids.include?(m.id) ? 0 : 1, m.position ] }
     @maps = piece_maps + rest
     @game_map = @maps.find { |m| m.id == params[:map].to_i } || @maps.first
-    # VASSAL ToolbarMenu grouping: menu entries match map windows by their
-    # launch button text (buttonName); unmatched entries are skipped and empty
-    # menus don't render. Grouped maps leave the flat tab list.
+    # VASSAL ToolbarMenu grouping: menu entries match toolbar buttons by their
+    # untranslated text — a map window's buttonName or a module Global Key
+    # Command's buttonText. Unmatched entries are skipped and empty menus
+    # don't render; grouped buttons leave the flat lists. GKC buttons act on
+    # the game, so spectators don't get them.
+    gkc_buttons = @player ? @game_module.global_key_commands.each_with_index.map { |gkc, index| { gkc:, index: } } : []
     @map_menus = @game_module.toolbar_menus.filter_map do |menu|
-      maps = menu["items"].filter_map { |item| @maps.find { |m| m.settings["buttonName"] == item } }.uniq
-      { name: menu["name"], icon: menu["icon"], maps: } if maps.any?
+      entries = menu["items"].filter_map do |item|
+        if (map = @maps.find { |m| m.settings["buttonName"] == item })
+          { map: }
+        else
+          gkc_buttons.find { |b| b[:gkc]["text"] == item }
+        end
+      end.uniq
+      { name: menu["name"], icon: menu["icon"], entries: } if entries.any?
     end
-    @tab_maps = @maps - @map_menus.flat_map { |m| m[:maps] }
+    grouped = @map_menus.flat_map { |m| m[:entries] }
+    @tab_maps = @maps - grouped.filter_map { |e| e[:map] }
+    @toolbar_global_keys = gkc_buttons - grouped
     @layout = @game_map ? @game.board_layout(@game_map).entries : []
     # Destinations offered by the "move to another map" piece menu: every real
     # map of the module except the one in view (VASSAL lets a piece be dragged

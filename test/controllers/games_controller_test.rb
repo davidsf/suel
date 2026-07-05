@@ -172,13 +172,33 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "details.map-menu span.map-tab.active", text: /Combat Results Table/
   end
 
+  test "module GlobalKeyCommand buttons render grouped in their ToolbarMenu" do
+    sign_in_as users(:one)
+    setup_module = create_setup_module!
+    ModuleImportJob.perform_now(setup_module)
+    game = create_game_for!(setup_module.reload, side: "GE")
+
+    get game_path(game)
+    assert_response :success
+    assert_select "details.map-menu summary", text: /Setup Scenarios/
+    assert_select "details.map-menu button[data-game-table-url-param=?]",
+      game_global_keys_path(game, button: 0), text: /Setup 1941/
+
+    # Spectators don't get action buttons.
+    sign_in_as users(:two)
+    get game_path(game)
+    assert_response :success
+    assert_select "details.map-menu", count: 0
+    assert_select "button[data-game-table-url-param=?]", game_global_keys_path(game, button: 0), count: 0
+  end
+
   private
 
-  def create_game_for!(game_module)
+  def create_game_for!(game_module, side: "Bando A")
     game = Game.create!(game_module: game_module, creator: users(:one), name: "Prueba",
                         scenario: game_module.scenarios.find_by(kind: "module_setup"))
     game.copy_scenario_pieces!
-    game.players.create!(user: users(:one), side: "Bando A")
+    game.players.create!(user: users(:one), side: side)
     game
   end
 

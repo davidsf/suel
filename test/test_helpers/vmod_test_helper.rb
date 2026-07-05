@@ -208,6 +208,47 @@ module VmodTestHelper
     XML
   end
 
+  # An Empire of the Sun-style module with a toolbar "Setup" menu: a Main Map
+  # (square grid, hidden-units deck) plus a module-level ToolbarMenu whose
+  # entry is a GlobalKeyCommand that sends SetupGame to the control piece
+  # whose BasicName fast-matches, and a second GKC that matches no menu.
+  def create_setup_module!
+    create_game_module!(
+      "buildFile.xml" => setup_build_file,
+      "moduledata" => %(<?xml version="1.0"?><data version="1"><name>Setup</name><version>1.0</version><VassalVersion>3.7.0</VassalVersion></data>),
+      "images/board.png" => "fake"
+    )
+  end
+
+  def setup_build_file
+    reveal_build_file.sub("</VASSAL.build.GameModule>", <<~XML)
+        <VASSAL.build.module.ToolbarMenu description="Setup Scenarios" text="" tooltip="Setup Scenarios" icon="" menuItems="Setup 1941"/>
+        <VASSAL.build.module.GlobalKeyCommand name="1941 Campaign" buttonText="Setup 1941" tooltip="Setup the 1941 scenario" icon="" hotkey="57358,0,SetupGame" deckCount="0" filter="" reportFormat="" target="MODULE|false|MAP|Main Map||||0|0||true|{&quot;BasicName&quot;}|{&quot;Setup 1941 Scenario&quot;}|EQUALS||"/>
+      </VASSAL.build.GameModule>
+    XML
+  end
+
+  # Control piece for the setup chain: SetupGame triggers SetupPieces, which
+  # broadcasts setup1941 to every on-map counter (COUNTER target, no deck).
+  def setup_control_traits
+    [
+      { "kind" => "trigger", "key" => "named:SetupGame", "watch_keys" => [],
+        "action_keys" => [ "named:SetupPieces" ] },
+      { "kind" => "global_key", "key" => "named:SetupPieces", "global_key" => "named:setup1941",
+        "count" => 0, "target" => "COUNTER|false|MAP|||||0|0||false|||EQUALS||" },
+      { "kind" => "basic", "image" => "board.png", "name" => "Setup 1941 Scenario" }
+    ]
+  end
+
+  # A unit that self-places to a grid cell when the scenario key arrives.
+  def setup_unit_traits(cell, name: "Unit")
+    [
+      { "kind" => "send_to", "key" => "named:setup1941", "dest" => "G",
+        "map" => "Main Map", "board" => "Board1", "grid_location" => cell },
+      { "kind" => "basic", "image" => "board.png", "name" => name }
+    ]
+  end
+
   # The breadcrumb spec a PlaceMarker trait uses to point at the "Status Marker"
   # palette slot above (PieceWindow → TabWidget → ListWidget → PieceSlot).
   STATUS_MARKER_SPEC =
