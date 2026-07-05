@@ -19,5 +19,20 @@
     <%= form.label :side, t("games.side_label") %><br>
     <%= form.select :side, @game.game_module.sides %>
   </p>
+  <% @board_choice_maps.each do |map| %>
+    <fieldset class="board-choice">
+      <legend><%= t("games.select_board_for", map: map.name) %></legend>
+      <% chosen = params.dig(:game, :board_setup, map.identifier) || map.boards.first.name %>
+      <% map.boards.each do |board| %>
+        <label class="board-option">
+          <%= radio_button_tag "game[board_setup][#{map.identifier}]", board.name, board.name == chosen %>
+          <% if board.image_filename.present? %>
+            <%= image_tag board_preview_path(board, @scenario.game_module), class: "board-thumb", alt: "" %>
+          <% end %>
+          <%= board.name %>
+        </label>
+      <% end %>
+    </fieldset>
+  <% end %>
   <p><%= form.submit t("games.create") %></p>
 <% end %>

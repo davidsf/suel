@@ -9,6 +9,7 @@ class GamesController < ApplicationController
     @scenario = Scenario.ready.find(params[:scenario_id])
     @game = Game.new(scenario: @scenario, game_module: @scenario.game_module,
                      name: "#{@scenario.game_module.name} — #{@scenario.name}")
+    @board_choice_maps = @scenario.maps_needing_board_choice
   end
 
   def create
@@ -19,6 +20,9 @@ class GamesController < ApplicationController
       creator: Current.user,
       name: params.dig(:game, :name)
     )
+    # Dynamic map-identifier keys, so permit the whole sub-hash; the values
+    # are validated against the module's boards by the model.
+    @game.choose_boards(params.dig(:game, :board_setup)&.permit!&.to_h)
     side = params.dig(:game, :side)
 
     Game.transaction do
@@ -30,6 +34,7 @@ class GamesController < ApplicationController
     redirect_to @game, notice: t("flash.game_created")
   rescue ActiveRecord::RecordInvalid => e
     @game.errors.merge!(e.record.errors) unless e.record == @game
+    @board_choice_maps = @scenario.maps_needing_board_choice
     render :new, status: :unprocessable_entity
   end
 

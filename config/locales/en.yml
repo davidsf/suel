@@ -128,6 +128,7 @@ en:
     scenario_lead: "%{module} — scenario %{scenario}"
     name_label: "Game name"
     side_label: "Your side"
+    select_board_for: "Select board — %{map}"
     no_known_boards: "The game has no pieces on known boards."
     join_as: "Join as %{side}"
     spectator: "(spectator)"
@@ -187,3 +188,5 @@ en:
           attributes:
             scenario:
               not_ready: "is not ready"
+            board_setup:
+              unknown_board: "names a board the module doesn't have"

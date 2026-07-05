@@ -12,9 +12,29 @@ class Game < ApplicationRecord
 
   validates :name, presence: true
   validate :scenario_must_be_ready, on: :create
+  validate :chosen_boards_must_exist, on: :create
 
   delegate :sides, to: :game_module
-  delegate :board_layout, to: :scenario
+
+  # The game's own board choice for the map (made at creation) wins over the
+  # scenario's .vsav selection; with neither, BoardLayout falls back to the
+  # map's first board.
+  def board_layout(game_map)
+    entries = (board_setup || {})[game_map.identifier]
+    entries.present? ? BoardLayout.new(game_map, entries) : scenario.board_layout(game_map)
+  end
+
+  # Records the creator's board picks (map identifier => board name) for the
+  # maps whose BoardPicker prompts (VASSAL's "Choose Boards" dialog). Choices
+  # for maps that don't prompt are ignored; a missing choice defaults to the
+  # map's first board, VASSAL's default selection.
+  def choose_boards(choices)
+    choices = (choices || {}).to_h
+    scenario.maps_needing_board_choice.each do |map|
+      name = choices[map.identifier].presence || map.boards.first.name
+      board_setup[map.identifier] = [ { "name" => name, "col" => 0, "row" => 0, "reversed" => false } ]
+    end
+  end
 
   def free_sides
     sides - players.pluck(:side)
@@ -230,5 +250,17 @@ class Game < ApplicationRecord
 
   def scenario_must_be_ready
     errors.add(:scenario, :not_ready) unless scenario&.ready?
+  end
+
+  def chosen_boards_must_exist
+    return if game_module.nil? || board_setup.blank?
+
+    maps = game_module.game_maps.includes(:boards).index_by(&:identifier)
+    board_setup.each do |identifier, entries|
+      boards = maps[identifier]&.boards&.map(&:name) or next errors.add(:board_setup, :unknown_board)
+      Array(entries).each do |entry|
+        errors.add(:board_setup, :unknown_board) unless boards.include?(entry["name"])
+      end
+    end
   end
 end

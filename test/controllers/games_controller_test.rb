@@ -106,6 +106,42 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_match "hand_count", response.body
   end
 
+  test "a multi-board map prompts for a board at game creation and honors the choice" do
+    sign_in_as users(:one)
+    game_module = create_multi_board_module!
+    ModuleImportJob.perform_now(game_module)
+    game_module.reload
+    scenario = game_module.scenarios.find_by(kind: "module_setup")
+    map = game_module.game_maps.kind_map.first
+
+    get new_game_path(scenario_id: scenario.id)
+    assert_response :success
+    assert_select "fieldset.board-choice legend", text: /Main Map/
+    assert_select "input[type=radio][name=?][value=?]", "game[board_setup][#{map.identifier}]", "Small Map"
+
+    post games_path, params: { game: { scenario_id: scenario.id, name: "Pacífico", side: "Bando A",
+                                       board_setup: { map.identifier => "Small Map" } } }
+    game = Game.last
+    assert_redirected_to game_path(game)
+    assert_equal "Small Map", game.board_layout(map).entries.first.board.name
+    get game_path(game)
+    assert_response :success
+    assert_match "board2.png", response.body
+
+    # An unknown board re-renders the form with the picker.
+    post games_path, params: { game: { scenario_id: scenario.id, name: "Mal", side: "Bando A",
+                                       board_setup: { map.identifier => "Nope" } } }
+    assert_response :unprocessable_entity
+    assert_select "fieldset.board-choice"
+  end
+
+  test "single-board modules show no board picker" do
+    sign_in_as users(:one)
+    get new_game_path(scenario_id: @scenario.id)
+    assert_response :success
+    assert_select "fieldset.board-choice", count: 0
+  end
+
   test "piece-less map windows show as tabs, grouped by ToolbarMenu like VASSAL" do
     sign_in_as users(:one)
     charts = create_chart_maps_module!

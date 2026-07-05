@@ -136,6 +136,35 @@ module VmodTestHelper
     XML
   end
 
+  # An Empire of the Sun-style module: one map window whose BoardPicker offers
+  # two alternative boards (the player must choose at new game), plus a
+  # SetupStack so a ready module_setup scenario (with empty board_setup) exists.
+  def create_multi_board_module!
+    create_game_module!(
+      "buildFile.xml" => multi_board_build_file,
+      "moduledata" => %(<?xml version="1.0"?><data version="1"><name>MultiBoard</name><version>1.0</version><VassalVersion>3.7.0</VassalVersion></data>),
+      "images/board.png" => "fake", "images/board2.png" => "fake"
+    )
+  end
+
+  def multi_board_build_file
+    <<~XML
+      <?xml version="1.0"?>
+      <VASSAL.build.GameModule name="MultiBoard" version="1.0" VassalVersion="3.7.0">
+        <VASSAL.build.module.PlayerRoster><entry>Bando A</entry><entry>Bando B</entry></VASSAL.build.module.PlayerRoster>
+        <VASSAL.build.module.Map mapName="Main Map">
+          <VASSAL.build.module.map.BoardPicker boardPrompt="Select board" title="Choose Boards">
+            <VASSAL.build.module.map.boardPicker.Board name="Full Map" image="board.png" width="600" height="400"/>
+            <VASSAL.build.module.map.boardPicker.Board name="Small Map" image="board2.png" width="300" height="200"/>
+          </VASSAL.build.module.map.BoardPicker>
+          <VASSAL.build.module.map.SetupStack name="Start" owningBoard="" x="100" y="100">
+            <VASSAL.build.widget.PieceSlot entryName="Dummy" gpid="1" width="50" height="50">+/null/piece;;;board.png;Dummy/null;100;100;1;0</VASSAL.build.widget.PieceSlot>
+          </VASSAL.build.module.map.SetupStack>
+        </VASSAL.build.module.Map>
+      </VASSAL.build.GameModule>
+    XML
+  end
+
   # A Holland '44-style module: a Main Map with pieces plus piece-less chart
   # map windows, two of them grouped under a ToolbarMenu "Charts &amp; Tables"
   # (matching by buttonName), one ungrouped, and a ToolbarMenu whose items

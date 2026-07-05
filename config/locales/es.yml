@@ -128,6 +128,7 @@ es:
     scenario_lead: "%{module} — escenario %{scenario}"
     name_label: "Nombre de la partida"
     side_label: "Tu bando"
+    select_board_for: "Elige tablero — %{map}"
     no_known_boards: "La partida no tiene fichas sobre tableros conocidos."
     join_as: "Unirse como %{side}"
     spectator: "(espectador)"
@@ -187,6 +188,8 @@ es:
           attributes:
             scenario:
               not_ready: "no está listo"
+            board_setup:
+              unknown_board: "nombra un tablero que el módulo no tiene"
     attributes:
       player:
         user_id: "Jugador"
@@ -194,3 +197,4 @@ es:
       game:
         name: "Nombre"
         scenario: "Escenario"
+        board_setup: "La elección de tablero"

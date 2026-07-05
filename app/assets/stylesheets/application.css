@@ -76,6 +76,14 @@ details.box summary { cursor: pointer; color: var(--muted); }
 
 ul.warning-list { font-size: 0.85rem; color: var(--muted); }
 
+/* board choice at game creation (VASSAL's "Choose Boards" dialog) */
+fieldset.board-choice {
+  border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.8rem;
+  margin: 0.8rem 0; display: flex; gap: 1rem; flex-wrap: wrap;
+}
+.board-option { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.board-option .board-thumb { max-height: 90px; max-width: 140px; border: 1px solid var(--border); border-radius: 4px; }
+
 /* ---- board viewer ---- */
 .viewer {
   position: relative;
