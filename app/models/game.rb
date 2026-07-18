@@ -18,10 +18,15 @@ class Game < ApplicationRecord
 
   # The game's own board choice for the map (made at creation) wins over the
   # scenario's .vsav selection; with neither, BoardLayout falls back to the
-  # map's first board.
+  # map's first board. Memoized per map: a layout is asked for once per piece
+  # per command (location names, send-to destinations) and rebuilding it
+  # re-deserializes every board's grid.
   def board_layout(game_map)
-    entries = (board_setup || {})[game_map.identifier]
-    entries.present? ? BoardLayout.new(game_map, entries) : scenario.board_layout(game_map)
+    @board_layouts ||= {}
+    @board_layouts[game_map.id] ||= begin
+      entries = (board_setup || {})[game_map.identifier]
+      entries.present? ? BoardLayout.new(game_map, entries) : scenario.board_layout(game_map)
+    end
   end
 
   # Records the creator's board picks (map identifier => board name) for the
@@ -34,6 +39,13 @@ class Game < ApplicationRecord
       name = choices[map.identifier].presence || map.boards.first.name
       board_setup[map.identifier] = [ { "name" => name, "col" => 0, "row" => 0, "reversed" => false } ]
     end
+    @board_layouts = nil
+  end
+
+  # The layout memo derives from board_setup; drop it with the attributes.
+  def reload(...)
+    @board_layouts = nil
+    super
   end
 
   def free_sides

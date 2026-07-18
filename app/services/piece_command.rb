@@ -42,7 +42,7 @@ class PieceCommand
 
   # Expands and logs a module-level report format (no piece context).
   def report(format)
-    @reports << format.gsub(/\$([^$]+)\$/) { @game.property($1) || "" } if format.present?
+    @reports << expand_tokens(format.to_s, {}) if format.present?
   end
 
   def fire(piece, keystroke, depth = 0)
@@ -72,19 +72,19 @@ class PieceCommand
   # (VASSAL reaches deck pieces per deckCount), and a legacy deck trait
   # count of 0 still means "all".
   def targets(trait)
-    target = Vassal::GlobalCommandTarget.parse(trait["target"])
+    target = parsed_target(trait["target"])
     if target&.deck_target? || (target.nil? && trait["deck"].present?)
       deck = @game.deck_named(target&.deck.presence || trait["deck"]) or return []
       scope = @game.game_pieces.in_deck(deck)
       count = trait["count"].to_i
       count.positive? ? scope.limit(count).to_a : scope.to_a
     else
-      scope = @game.game_pieces.on_map
+      pieces = on_map_pieces
       if target&.fast_match_location? && %w[MAP ZONE LOCATION XY].include?(target.target_type) && target.map.present?
-        map = @game.game_module.game_maps.find_by(name: target.map)
-        scope = map ? scope.where(game_map: map) : GamePiece.none
+        map = maps_by_name[target.map]
+        pieces = map ? pieces.select { |p| p.game_map_id == map.id } : []
       end
-      scope.select { |piece| matches?(piece, target, trait["property_filter"]) }
+      pieces.select { |piece| matches?(piece, target, trait["property_filter"]) }
     end
   end
 
@@ -118,6 +118,7 @@ class PieceCommand
     arrived = !piece.on_map?
     piece.relocate_to!(*dest)
     touch(piece)
+    track_on_map(piece)
     if arrived
       @placed << piece
       @source_decks << from_deck if from_deck
@@ -140,6 +141,7 @@ class PieceCommand
     touch(piece)
     @removed << piece if from_map
     @source_decks << deck
+    untrack_on_map(piece)
   end
 
   def run_global_key(trait, keystroke, depth)
@@ -195,6 +197,7 @@ class PieceCommand
     )
     touch(piece)
     @placed << piece
+    track_on_map(piece)
   end
 
   def remove(piece)
@@ -203,6 +206,7 @@ class PieceCommand
     @touched.delete(piece.id)
     piece.destroy!
     @removed << piece
+    untrack_on_map(piece)
   end
 
   def run_report(piece, trait, keystroke)
@@ -213,11 +217,60 @@ class PieceCommand
 
   # A target piece passes the property fast-match and then the BeanShell
   # propertiesFilter; properties resolve on the piece first, then the game's
-  # globals, like getProperty.
+  # globals, like getProperty. Location properties are only resolved when
+  # something can reference them — a location lookup is a grid scan and this
+  # runs once per piece per broadcast.
   def matches?(piece, target, filter)
-    props = @game.properties.to_h.merge(piece.vassal_properties)
-    return false if target && !target.property_match?(props)
+    fast = target&.fast_match_property?
+    return true unless fast || filter.present?
+
+    with_location = filter.present? || GamePiece::LOCATION_PROPERTY_NAMES.include?(target&.property)
+    props = @game.properties.merge(props_for(piece, location: with_location))
+    return false if fast && !target.property_match?(props)
     filter.blank? || Vassal::PropertyExpression.match?(filter, props)
+  end
+
+  # The on-map pieces, loaded once per command: nested global keys re-target
+  # the whole map and re-querying would re-instantiate (and re-parse the
+  # traits of) every piece each time. Kept in sync as pieces enter/leave maps.
+  def on_map_pieces
+    @on_map_pieces ||= @game.game_pieces.on_map.includes(:game_map, :board).to_a
+  end
+
+  # Adds the piece, or replaces a twin instance of the same row: the run()
+  # entry piece is loaded outside the snapshot, so after it moves between
+  # maps its snapshot twin would otherwise keep the stale position.
+  def track_on_map(piece)
+    return unless @on_map_pieces
+
+    index = @on_map_pieces.index { |p| p.id == piece.id }
+    index ? @on_map_pieces[index] = piece : @on_map_pieces << piece
+  end
+
+  def untrack_on_map(piece)
+    @on_map_pieces&.delete(piece)
+  end
+
+  # The piece's trait properties, cached per piece for the run (commands move
+  # pieces but never rewrite their traits); location keys are resolved fresh
+  # since moves change them.
+  def props_for(piece, location: true)
+    base = (@piece_props ||= {})[piece.id] ||= piece.vassal_properties(location: false)
+    location ? base.merge(piece.location_properties) : base
+  end
+
+  def parsed_target(string)
+    return nil if string.blank?
+
+    (@parsed_targets ||= {})[string] ||= Vassal::GlobalCommandTarget.parse(string)
+  end
+
+  # First map wins on duplicate names, like the find_by on the
+  # position-ordered association this replaces.
+  def maps_by_name
+    @maps_by_name ||= @game.game_module.game_maps.each_with_object({}) do |map, index|
+      index[map.name] ||= map
+    end
   end
 
   # Resolves a SendToLocation trait to [game_map, map_x, map_y], or nil. Grid
@@ -225,7 +278,7 @@ class PieceCommand
   # grid; L is a fixed board-local point. Coordinates are shifted by the board's
   # position in the layout to map space.
   def destination(piece, trait)
-    game_map = @game.game_module.game_maps.find_by(name: trait["map"]) or return nil
+    game_map = maps_by_name[trait["map"]] or return nil
     layout = @game.board_layout(game_map)
     entry = trait["board"].present? ? layout.entry_for(trait["board"]) : layout.entries.first
     board = entry&.board or return nil
@@ -243,10 +296,17 @@ class PieceCommand
   end
 
   # Expands $property$ tokens against the piece's properties then the game's
-  # global properties; unknown tokens resolve to empty, VASSAL-style.
+  # global properties; unknown tokens resolve to empty, VASSAL-style. Token-
+  # free expressions skip the property lookup (it includes a grid scan).
   def resolve(expression, piece)
-    props = piece.vassal_properties
-    expression.to_s.gsub(/\$([^$]+)\$/) { props[$1] || @game.property($1) || "" }
+    expression = expression.to_s
+    return expression unless expression.include?("$")
+
+    expand_tokens(expression, props_for(piece))
+  end
+
+  def expand_tokens(expression, props)
+    expression.gsub(/\$([^$]+)\$/) { props[$1] || @game.property($1) || "" }
   end
 
   def touch(piece)

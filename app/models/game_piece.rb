@@ -86,10 +86,22 @@ class GamePiece < ApplicationRecord
     restricted.empty? ? commands : commands.reject { |c| restricted.include?(c["key"]) }
   end
 
+  # The property names only resolvable through the piece's position (a grid
+  # scan) — see location_properties.
+  LOCATION_PROPERTY_NAMES = %w[LocationName location].freeze
+
+  # The location-derived VASSAL properties, split out so callers that cache
+  # the trait properties (PieceCommand) can refresh just these after a move.
+  def location_properties
+    LOCATION_PROPERTY_NAMES.index_with(location_name.to_s)
+  end
+
   # The piece's VASSAL properties (BasicPiece name, markers, dynamic property
   # values) plus its current location — the namespace $property$ tokens in
   # command traits resolve against, alongside the game's global properties.
-  def vassal_properties
+  # location: false skips the location lookup (a grid scan), for callers that
+  # only match trait properties over many pieces (global key broadcasts).
+  def vassal_properties(location: true)
     props = {}
     traits.each do |trait|
       case trait["kind"]
@@ -100,7 +112,7 @@ class GamePiece < ApplicationRecord
       when "dynamic_property" then props[trait["name"]] = trait["value"].to_s
       end
     end
-    props["LocationName"] = props["location"] = location_name.to_s
+    props.merge!(location_properties) if location
     props["newPieceName"] = props["oldPieceName"] = props["pieceName"]
     props.compact
   end
