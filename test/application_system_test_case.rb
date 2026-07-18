@@ -5,7 +5,11 @@ require "test_helper"
 Capybara.default_max_wait_time = 5
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
-  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 900 ]
+  # Pin the browser to English so i18n'd assertions don't depend on the
+  # machine's locale.
+  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 900 ] do |options|
+    options.add_preference("intl.accept_languages", "en")
+  end
 
   # Logs a user in and waits until the redirect away from the login form has
   # landed (avoids racing a not-yet-submitted Turbo form under load).
@@ -16,7 +20,8 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     # Retry the submit: under load the first click can land before Turbo is
     # ready and get swallowed, leaving us on the login form.
     3.times do
-      click_on "Sign in"
+      # The form submit, not the header's sign-in link (locale-agnostic too).
+      find("input[type=submit]").click
       return if has_no_selector?("input[name=email_address]", wait: 2)
       visit new_session_path
       fill_in "email_address", with: user.email_address
