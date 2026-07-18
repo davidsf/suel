@@ -4,7 +4,8 @@
 <% total_height = layout.map { |e| e.y + e.height }.max.to_i %>
 <div data-controller="pan-zoom board"
      data-pan-zoom-width-value="<%= total_width %>"
-     data-pan-zoom-height-value="<%= total_height %>">
+     data-pan-zoom-height-value="<%= total_height %>"
+     <%= tag.attributes("data-pan-zoom-key-value": local_assigns[:key]) if local_assigns[:key] %>>
   <div class="viewer-bar">
     <%= toolbar %>
     <span class="spacer"></span>

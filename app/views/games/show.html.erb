@@ -69,7 +69,8 @@
     <%= turbo_stream_from @game, @player.side if @player %>
 
     <%= render layout: "boards/viewer",
-          locals: { layout: @layout, game_module: @game_module, toolbar: } do %>
+          locals: { layout: @layout, game_module: @game_module, toolbar:,
+                    key: "game-#{@game.id}-map-#{@game_map.id}" } do %>
       <div id="<%= dom_id(@game_map, :pieces) %>">
         <% @pieces.each do |piece| %>
           <%= render "game_pieces/game_piece", game_piece: piece, game_module: @game_module %>

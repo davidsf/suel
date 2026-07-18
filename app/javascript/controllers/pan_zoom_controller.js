@@ -8,7 +8,8 @@ export default class extends Controller {
     width: Number,
     height: Number,
     minScale: { type: Number, default: 0.05 },
-    maxScale: { type: Number, default: 4 }
+    maxScale: { type: Number, default: 4 },
+    key: String
   }
 
   connect() {
@@ -16,7 +17,39 @@ export default class extends Controller {
     this.y = 0
     this.scale = 1
     this.pointers = new Map()
-    this.fit()
+    if (!this.restore()) this.fit()
+  }
+
+  // View state survives tab-switch navigations: each map tab is a full page
+  // visit, so the pan/zoom lives in sessionStorage keyed per map.
+  restore() {
+    if (!this.hasKeyValue) return false
+    let state
+    try {
+      state = JSON.parse(sessionStorage.getItem(this.storageKey))
+    } catch {
+      return false
+    }
+    if (!state || ![state.x, state.y, state.scale].every(Number.isFinite)) return false
+    this.x = state.x
+    this.y = state.y
+    this.scale = Math.min(Math.max(state.scale, this.minScaleValue), this.maxScaleValue)
+    this.apply()
+    return true
+  }
+
+  save() {
+    if (!this.hasKeyValue) return
+    try {
+      sessionStorage.setItem(this.storageKey,
+        JSON.stringify({ x: this.x, y: this.y, scale: this.scale }))
+    } catch {
+      // Storage unavailable (private browsing, quota): view just won't persist.
+    }
+  }
+
+  get storageKey() {
+    return `pan-zoom:${this.keyValue}`
   }
 
   // Fit the board into the viewport on load
@@ -96,5 +129,6 @@ export default class extends Controller {
   apply() {
     this.worldTarget.style.transform =
       `translate(${this.x}px, ${this.y}px) scale(${this.scale})`
+    this.save()
   }
 }
