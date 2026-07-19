@@ -664,6 +664,10 @@ export default class extends Controller {
   }
 
   roll(event) {
+    // The result arrives via a Turbo Stream broadcast into the log; open it so
+    // a collapsed log doesn't hide the roll the user just triggered.
+    const log = this.element.querySelector("details.game-log")
+    if (log) log.open = true
     fetch(event.params.url, {
       method: "POST",
       headers: { "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content }

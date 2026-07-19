@@ -81,43 +81,45 @@
       <% end %>
     <% end %>
 
-    <% if @player && (@dice_buttons.any? || @special_dice.any? || @toolbar_global_keys.any?) %>
-      <div class="dice-bar">
-        <% @dice_buttons.each_with_index do |button, index| %>
-          <button data-action="game-table#roll"
-                  data-game-table-url-param="<%= game_rolls_path(@game, button: index) %>"
-                  title="<%= button['n_dice'] %>d<%= button['n_sides'] %><%= "+#{button['plus']}" if button['plus'].positive? %>">
-            🎲 <%= button["label"] %>
-          </button>
-        <% end %>
-        <% @special_dice.each_with_index do |button, index| %>
-          <button data-action="game-table#roll"
-                  data-game-table-url-param="<%= game_rolls_path(@game, special: index) %>"
-                  title="<%= t("table.image_dice", count: button['dice'].size) %>">
-            🎲 <%= button["label"] %>
-          </button>
-        <% end %>
-        <% @toolbar_global_keys.each do |entry| %>
-          <%= render "games/global_key_button", game: @game, game_module: @game_module, entry: entry, css_class: nil %>
-        <% end %>
-      </div>
-    <% end %>
-
-    <details class="game-log" open>
-      <summary><%= t("table.log") %></summary>
-      <div id="game_log" class="log-entries">
-        <% @events.each do |event| %>
-          <%= render "game_events/game_event", game_event: event %>
-        <% end %>
-      </div>
-      <%= form_with url: game_messages_path(@game), method: :post, class: "chat-form",
-            data: { controller: "reset-form", action: "turbo:submit-end->reset-form#reset" } do |form| %>
-        <%# size: nil — Rails copies maxlength into size, and size=500 overflows the panel %>
-        <%= form.text_field :body, placeholder: t("table.chat_placeholder"), maxlength: 500, size: nil,
-              autocomplete: "off", required: true %>
-        <%= form.submit t("table.send") %>
+    <div class="table-corner">
+      <% if @player && (@dice_buttons.any? || @special_dice.any? || @toolbar_global_keys.any?) %>
+        <div class="dice-bar">
+          <% @dice_buttons.each_with_index do |button, index| %>
+            <button data-action="game-table#roll"
+                    data-game-table-url-param="<%= game_rolls_path(@game, button: index) %>"
+                    title="<%= button['n_dice'] %>d<%= button['n_sides'] %><%= "+#{button['plus']}" if button['plus'].positive? %>">
+              🎲 <%= button["label"] %>
+            </button>
+          <% end %>
+          <% @special_dice.each_with_index do |button, index| %>
+            <button data-action="game-table#roll"
+                    data-game-table-url-param="<%= game_rolls_path(@game, special: index) %>"
+                    title="<%= t("table.image_dice", count: button['dice'].size) %>">
+              🎲 <%= button["label"] %>
+            </button>
+          <% end %>
+          <% @toolbar_global_keys.each do |entry| %>
+            <%= render "games/global_key_button", game: @game, game_module: @game_module, entry: entry, css_class: nil %>
+          <% end %>
+        </div>
       <% end %>
-    </details>
+
+      <details class="game-log" open>
+        <summary><%= t("table.log") %></summary>
+        <div id="game_log" class="log-entries">
+          <% @events.each do |event| %>
+            <%= render "game_events/game_event", game_event: event %>
+          <% end %>
+        </div>
+        <%= form_with url: game_messages_path(@game), method: :post, class: "chat-form",
+              data: { controller: "reset-form", action: "turbo:submit-end->reset-form#reset" } do |form| %>
+          <%# size: nil — Rails copies maxlength into size, and size=500 overflows the panel %>
+          <%= form.text_field :body, placeholder: t("table.chat_placeholder"), maxlength: 500, size: nil,
+                autocomplete: "off", required: true %>
+          <%= form.submit t("table.send") %>
+        <% end %>
+      </details>
+    </div>
 
     <div class="piece-toolbar piece-menu" data-game-table-target="toolbar" hidden>
       <span data-game-table-target="pieceName" class="menu-title"></span>
