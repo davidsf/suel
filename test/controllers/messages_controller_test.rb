@@ -21,12 +21,18 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
   test "a player chats under their side name and the message is broadcast" do
     sign_in_as users(:one)
 
-    assert_turbo_stream_broadcasts(@game, count: 1) do
+    streams = capture_turbo_stream_broadcasts(@game) do
       post game_messages_path(@game), params: { body: "¡Buena suerte!" }
     end
     assert_response :no_content
     assert_equal "Bando A: ¡Buena suerte!", GameEvent.last.body
     assert GameEvent.last.chat_kind?
+
+    # Prepend: newest-first DOM + the log's column-reverse = newest at the
+    # bottom, by the chat input.
+    assert_equal 1, streams.size
+    assert_equal "prepend", streams.first["action"]
+    assert_equal "game_log", streams.first["target"]
   end
 
   test "spectators chat under their user name" do

@@ -104,7 +104,9 @@ class GamesController < ApplicationController
     @pieces = @game_map ? placed.where(game_map_id: @game_map.id).order(:z_order) : GamePiece.none
     @dice_buttons = @game_module.dice_buttons
     @special_dice = @game_module.special_dice
-    @events = @game.game_events.order(:created_at).last(100)
+    # Newest first: the log's column-reverse CSS paints the list bottom-up,
+    # so the newest entry lands at the bottom, next to the chat input.
+    @events = @game.game_events.order(created_at: :desc, id: :desc).limit(100)
 
     # Decks shown on the current map (markers on hand maps live in the tray)
     @decks = @game_map ? @game_map.decks.reject { |d| @game_map.kind_player_hand? } : []
